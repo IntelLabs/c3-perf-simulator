@@ -50,6 +50,7 @@
 #include <vector>
 
 #include "arch/generic/pcstate.hh"
+#include "arch/x86/faults.hh"  // TODO this might not be idiomatic...
 #include "base/statistics.hh"
 #include "cpu/o3/comm.hh"
 #include "cpu/o3/commit.hh"
@@ -552,6 +553,27 @@ class CPU : public BaseCPU
                 const std::vector<bool>& byte_enable=std::vector<bool>())
 
     {
+        // aside: gem5 currently checks canonicality during APPLY_SEGMENT and
+        // during the IRET instruction; I haven't modified that. It looks like
+        // it might be incomplete.
+
+        // Here's where Intel's LAM48 can fit -- right before translation.
+        // TODO: condition the following on CR3 bits.
+        // TODO: make this macro'd out if we aren't using X86
+        bool do_LAM = true;
+        if (do_LAM) {
+            // if bits 63 and 47 don't match, the check fails! Throw #GP.
+            if (
+              !!(addr & (((Addr) 1) << 63)) != !!(addr & (((Addr) 1) << 47))
+              )
+            {
+              return std::make_shared<X86ISA::GeneralProtection>(1);
+            }
+            // otherwise, perform masking: sign-extend from bit 47
+            addr = (addr << 16);
+            addr = (Addr) (((int64_t) addr) >> 16);
+        }
+
         return iew.ldstQueue.pushRequest(inst, isLoad, data, size, addr,
                 flags, res, std::move(amo_op), byte_enable);
     }
