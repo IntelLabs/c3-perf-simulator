@@ -1,0 +1,3 @@
+[submodule "safeside"]
+	path = safeside
+	url = https://github.com/google/safeside
