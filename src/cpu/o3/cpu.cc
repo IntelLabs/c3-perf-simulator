@@ -113,8 +113,14 @@ CPU::CPU(const BaseO3CPUParams &params)
       globalSeqNum(1),
       system(params.system),
       lastRunningCycle(curCycle()),
+#ifdef C3
+      cryptoModule(CCPointerEncoding()),
+#endif
       cpuStats(this)
 {
+
+    cryptoModule.init_pointer_key(addr_key_.bytes_, addr_key_.size_);
+
     fatal_if(FullSystem && params.numThreads > 1,
             "SMT is not supported in O3 in full system mode currently.");
 

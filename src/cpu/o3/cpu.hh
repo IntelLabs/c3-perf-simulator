@@ -52,6 +52,9 @@
 #include "arch/generic/pcstate.hh"
 #include "arch/x86/faults.hh"  // TODO this might not be idiomatic...
 #include "base/statistics.hh"
+#include "cpu/activity.hh"
+#include "cpu/base.hh"
+#include "cpu/o3/c3_utils.hh"
 #include "cpu/o3/comm.hh"
 #include "cpu/o3/commit.hh"
 #include "cpu/o3/decode.hh"
@@ -64,8 +67,6 @@
 #include "cpu/o3/rob.hh"
 #include "cpu/o3/scoreboard.hh"
 #include "cpu/o3/thread_state.hh"
-#include "cpu/activity.hh"
-#include "cpu/base.hh"
 #include "cpu/simple_thread.hh"
 #include "cpu/timebuf.hh"
 #include "params/BaseO3CPU.hh"
@@ -113,6 +114,9 @@ class CPU : public BaseCPU
 
     /** Overall CPU status. */
     Status _status;
+
+    pointer_key_t addr_key_{.size_ = 32,
+                            .bytes_ = DEF_ADDR_KEY_BYTES};
 
   private:
 
@@ -536,6 +540,11 @@ class CPU : public BaseCPU
     /** The cycle that the CPU was last running, used for statistics. */
     Cycles lastRunningCycle;
 
+#define C3
+#ifdef C3
+    CCPointerEncoding cryptoModule;
+#endif
+
     /** The cycle that the CPU was last activated by a new thread*/
     Tick lastActivatedCycle;
 
@@ -558,7 +567,7 @@ class CPU : public BaseCPU
         // it might be incomplete.
 
         // Here's where Intel's LAM48 can fit -- right before translation.
-        // TODO: condition the following on CR3 bits.
+        // (unimportant) TODO: condition the following on CR3 bits.
         // TODO: make this macro'd out if we aren't using X86
         bool do_LAM = true;
         if (do_LAM) {
@@ -569,7 +578,19 @@ class CPU : public BaseCPU
             {
               return std::make_shared<X86ISA::GeneralProtection>(1);
             }
+
+#ifdef C3
+// THIS IS CURRENTLY DEFINED, but elsewhere
+// TODO: make it a flag
+            Addr dec_addr = cryptoModule.decode_pointer(addr);
+            // if size is 0 or 1, do nothing; else addr := dec_addr
+            uint64_t addr_size = (addr & (0b111111llu << 57)) >> 57;
+            addr =
+      ((addr_size == 0) || (addr_size == 0b111111))? addr : dec_addr;
+#endif
+
             // otherwise, perform masking: sign-extend from bit 47
+            // (this discards bits 63:48)
             addr = (addr << 16);
             addr = (Addr) (((int64_t) addr) >> 16);
         }
