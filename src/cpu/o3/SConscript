@@ -57,6 +57,7 @@ if not env['CONF']['USE_NULL_ISA']:
     Source('thread_context.cc')
     Source('thread_state.cc')
 
+    DebugFlag('C3DEBUG')
     DebugFlag('CommitRate')
     DebugFlag('IEW')
     DebugFlag('IQ')

@@ -45,6 +45,7 @@
 #include "base/logging.hh"
 #include "cpu/o3/dyn_inst.hh"
 #include "cpu/o3/limits.hh"
+#include "debug/C3DEBUG.hh"
 #include "debug/Fetch.hh"
 #include "debug/ROB.hh"
 #include "params/BaseO3CPU.hh"
@@ -352,6 +353,19 @@ ROB::doSquash(ThreadID tid)
         (*squashIt[tid])->setSquashed();
 
         (*squashIt[tid])->setCanCommit();
+
+        // If that instruction is a faulting memory instruction, print it out.
+        // TODO: maybe add stats for this...
+        if (((*squashIt[tid])->isLoad() || (*squashIt[tid])->isStore()) &&
+        ((*squashIt[tid])->fault != NoFault)) {
+            DPRINTF(C3DEBUG, "[tid:%i] Squashed %s inst @ PC %s, seq num %i "
+                "would have raised %s fault!\n",
+                (*squashIt[tid])->threadNumber,
+                (*squashIt[tid])->isLoad()? "load" : "store",
+                (*squashIt[tid])->pcState(),
+                (*squashIt[tid])->seqNum,
+                (*squashIt[tid])->fault->name());
+        }
 
 
         if (squashIt[tid] == instList[tid].begin()) {
