@@ -11,14 +11,14 @@
  * Original Authors: Andrew Weiler, Sergej Deutsch
  */
 
-#ifndef CPU_O3_C3_UTILS_H_
-#define CPU_O3_C3_UTILS_H_
+#ifndef CPU_C3_UTILS_HH_
+#define CPU_C3_UTILS_HH_
 
 #include <stdint.h>
 
 #include <cstddef>
 
-#include "cpu/o3/cc_globals.h"
+#include "cpu/cc_globals.h"
 #include "crypto/bipbip.h"
 
 #if defined(__cplusplus)
@@ -177,12 +177,15 @@ class CCPointerEncoding
      * @return uint64_t
      */
     virtual inline uint64_t encode_pointer(uint64_t pointer,
-                                           ptr_metadata_t *ptr_metadata) {
-        return encrypt_ptr(decorate_ptr({.uint64_ = pointer}, ptr_metadata),
-                           ptr_metadata)
+                                           uint64_t ptr_metadata_int) {
+        ptr_metadata_t ptr_metadata = {.uint64_ = ptr_metadata_int};
+        // BOY I hope this doesn't get freed until the function ends
+        // (it really oughtn't anyways.)
+        return encrypt_ptr(decorate_ptr({.uint64_ = pointer}, &ptr_metadata),
+                           &ptr_metadata)
                 .uint64_;
     }
 };
 
 #endif
-#endif  // MODULES_COMMON_CCSIMICS_CC_ENCODING_H_
+#endif  // CPU_C3_UTILS_HH

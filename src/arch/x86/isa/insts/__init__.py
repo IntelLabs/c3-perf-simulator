@@ -40,6 +40,7 @@ categories = [
     "simd64",
     "system",
     "x87",
+    "c3_isa",
 ]
 
 microcode = """

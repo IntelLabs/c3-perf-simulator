@@ -35,7 +35,14 @@
 // reference to make sure these are the memory forms of these instructions.
 0x1: decode MODRM_MOD {
     format Inst {
-        0x3: UD2();
+        0x3: decode OPCODE_OP {
+            // C3 insts have the LOCK prefix
+            0x01: decode MODRM {
+                0xc8: CCENCPTR(Rv,Gv);
+                default: UD2();
+            }
+            default: UD2();
+        }
         default: decode OPCODE_TYPE {
             'X86ISA::OneByteOpcode': decode OPCODE_OP_TOP5 {
                 0x00: decode OPCODE_OP_BOTTOM3 {

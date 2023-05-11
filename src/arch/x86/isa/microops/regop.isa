@@ -460,6 +460,12 @@ let {{
         def __init__(self, src1, src2, flags=None, dataSize="env.dataSize"):
             super().__init__(src1, src2, flags=flags, dataSize=dataSize)
 
+    class CcEncPtr(FlagRegOp):
+        code = '''
+result = xc->tcBase()->getCpuPtr()->cryptoModule.encode_pointer(PSrcReg1, op2);
+DestReg = merge(DestReg, dest, result, dataSize);  // hope this works!
+    '''
+
     class Add(FlagRegOp):
         code = '''
             result = PSrcReg1 + op2;

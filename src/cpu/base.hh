@@ -46,6 +46,7 @@
 
 #include "arch/generic/interrupts.hh"
 #include "base/statistics.hh"
+#include "cpu/c3_utils.hh"
 #include "debug/Mwait.hh"
 #include "mem/htm.hh"
 #include "mem/port_proxy.hh"
@@ -259,6 +260,11 @@ class BaseCPU : public ClockedObject
 
   public:
 
+  #define C3
+// TODO: instead of using #define, get a parameter for se.py
+  #ifdef C3
+    CCPointerEncoding cryptoModule;
+#endif
 
     /** Invalid or unknown Pid. Possible when operating system is not present
      *  or has not assigned a pid yet */

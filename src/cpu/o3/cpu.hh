@@ -54,7 +54,6 @@
 #include "base/statistics.hh"
 #include "cpu/activity.hh"
 #include "cpu/base.hh"
-#include "cpu/o3/c3_utils.hh"
 #include "cpu/o3/comm.hh"
 #include "cpu/o3/commit.hh"
 #include "cpu/o3/decode.hh"
@@ -540,11 +539,6 @@ class CPU : public BaseCPU
     /** The cycle that the CPU was last running, used for statistics. */
     Cycles lastRunningCycle;
 
-#define C3
-#ifdef C3
-    CCPointerEncoding cryptoModule;
-#endif
-
     /** The cycle that the CPU was last activated by a new thread*/
     Tick lastActivatedCycle;
 
@@ -578,10 +572,9 @@ class CPU : public BaseCPU
             {
               return std::make_shared<X86ISA::GeneralProtection>(1);
             }
-
+#define C3
 #ifdef C3
-// THIS IS CURRENTLY DEFINED, but elsewhere
-// TODO: make it a flag
+// TODO: make this an se.py option
             Addr dec_addr = cryptoModule.decode_pointer(addr);
             // if size is 0 or 1, do nothing; else addr := dec_addr
             uint64_t addr_size = (addr & (0b111111llu << 57)) >> 57;
