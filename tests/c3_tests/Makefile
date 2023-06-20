@@ -1,10 +1,10 @@
 SHELL := /bin/bash
 
-build: hello_c3 ../../build/X86/gem5.opt
+build: ../../build/X86/gem5.opt
 
-
-hello_c3: hello_c3.c
-	gcc hello_c3.c -o hello_c3
+# TODO: Need a portable, more automated way to build hello_c3.
+# (gcc alone won't work: we need the custom glibc!)
+# Build instructions are currently in hello_c3.c.
 
 ../../build/X86/gem5.opt:
 	cd ../..; \
