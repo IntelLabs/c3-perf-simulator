@@ -1,3 +1,13 @@
+The simulator in this repository is a work in progress. The end goal is a more
+realistic model of C3's performance than Simics provides -- particularly with
+respect to microarchitecture -- which is not informed by any Intel
+confidential microarchitectural details.
+
+Make sure to clone this repository with --recursive-submodules - otherwise,
+many tests will not build.
+
+---
+
 This is the gem5 simulator.
 
 The main website can be found at http://www.gem5.org
