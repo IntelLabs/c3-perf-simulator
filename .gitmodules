@@ -1,3 +1,6 @@
 [submodule "safeside"]
 	path = tests/safeside
 	url = https://github.com/google/safeside
+[submodule "c3-simulator"]
+	path = c3-simulator
+	url = https://github.com/intellabs/c3-simulator
