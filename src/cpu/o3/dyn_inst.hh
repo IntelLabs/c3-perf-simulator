@@ -186,7 +186,8 @@ class DynInst : public ExecContext, public RefCounted
         ReqMade,
         MemOpDone,
         HtmFromTransaction,
-        MaxFlags
+        MaxFlags,
+        EncodedPointer          /// Type of the address pointer (CA or LA)
     };
 
   private:
@@ -408,6 +409,10 @@ class DynInst : public ExecContext, public RefCounted
     /** True if the DTB address translation has started. */
     bool translationStarted() const { return instFlags[TranslationStarted]; }
     void translationStarted(bool f) { instFlags[TranslationStarted] = f; }
+
+    /** True if the address pointer is CA and False if it's LA. */
+    bool encodedPointer() const { return instFlags[EncodedPointer]; }
+    void encodedPointer(bool f) { instFlags[EncodedPointer] = f; }
 
     /** True if the DTB address translation has completed. */
     bool

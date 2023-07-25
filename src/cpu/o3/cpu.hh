@@ -553,44 +553,7 @@ class CPU : public BaseCPU
     pushRequest(const DynInstPtr& inst, bool isLoad, uint8_t *data,
                 unsigned int size, Addr addr, Request::Flags flags,
                 uint64_t *res, AtomicOpFunctorPtr amo_op = nullptr,
-                const std::vector<bool>& byte_enable=std::vector<bool>())
-
-    {
-        // aside: gem5 currently checks canonicality during APPLY_SEGMENT and
-        // during the IRET instruction; I haven't modified that. It looks like
-        // it might be incomplete.
-
-        // Here's where Intel's LAM48 can fit -- right before translation.
-        // (unimportant) TODO: condition the following on CR3 bits.
-        // TODO: make this macro'd out if we aren't using X86
-        bool do_LAM = true;
-        if (do_LAM) {
-            // if bits 63 and 47 don't match, the check fails! Throw #GP.
-            if (
-              !!(addr & (((Addr) 1) << 63)) != !!(addr & (((Addr) 1) << 47))
-              )
-            {
-              return std::make_shared<X86ISA::GeneralProtection>(1);
-            }
-#define C3
-#ifdef C3
-// TODO: make this an se.py option
-            Addr dec_addr = cryptoModule.decode_pointer(addr);
-            // if size is 0 or 1, do nothing; else addr := dec_addr
-            uint64_t addr_size = (addr & (0b111111llu << 57)) >> 57;
-            addr =
-      ((addr_size == 0) || (addr_size == 0b111111))? addr : dec_addr;
-#endif
-
-            // otherwise, perform masking: sign-extend from bit 47
-            // (this discards bits 63:48)
-            addr = (addr << 16);
-            addr = (Addr) (((int64_t) addr) >> 16);
-        }
-
-        return iew.ldstQueue.pushRequest(inst, isLoad, data, size, addr,
-                flags, res, std::move(amo_op), byte_enable);
-    }
+                const std::vector<bool>& byte_enable=std::vector<bool>());
 
     /** Used by the fetch unit to get a hold of the instruction port. */
     Port &
