@@ -153,8 +153,8 @@ class O3_X86_icelake_ICache(Cache):
 
 # D-Cache
 class O3_X86_icelake_DCache(Cache):
-    tag_latency = 1
-    data_latency = 1
+    tag_latency = 2
+    data_latency = 2
     response_latency = 1
     mshrs = 6
     tgts_per_mshr = 8
