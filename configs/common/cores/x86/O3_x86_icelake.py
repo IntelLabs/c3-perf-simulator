@@ -167,8 +167,8 @@ class O3_X86_icelake_DCache(Cache):
 
 # TLB Cache
 class O3_X86_icelakeWalkCache(Cache):
-    data_latency = 5
-    tag_latency = 5
+    data_latency = 8
+    tag_latency = 8
     response_latency = 1
     mshrs = 6
     tgts_per_mshr = 8
