@@ -137,9 +137,8 @@ class O3_X86_icelake_1(DerivO3CPU):
     branchPred = O3_X86_icelake_BP()
 
 
-# I-Cache
+# L1I-Cache
 class O3_X86_icelake_ICache(Cache):
-    response_latency = 1
     tag_latency = 1
     data_latency = 1
     response_latency = 1
@@ -151,10 +150,10 @@ class O3_X86_icelake_ICache(Cache):
     writeback_clean = True
 
 
-# D-Cache
+# L1D-Cache
 class O3_X86_icelake_DCache(Cache):
-    tag_latency = 2
-    data_latency = 2
+    tag_latency = 5
+    data_latency = 5
     response_latency = 1
     mshrs = 6
     tgts_per_mshr = 8
@@ -168,8 +167,8 @@ class O3_X86_icelake_DCache(Cache):
 
 # TLB Cache
 class O3_X86_icelakeWalkCache(Cache):
-    data_latency = 2
-    tag_latency = 2
+    data_latency = 5
+    tag_latency = 5
     response_latency = 1
     mshrs = 6
     tgts_per_mshr = 8
@@ -182,8 +181,8 @@ class O3_X86_icelakeWalkCache(Cache):
 
 # L2 Cache
 class O3_X86_icelakeL2(Cache):
-    tag_latency = 8
-    data_latency = 8
+    tag_latency = 11
+    data_latency = 11
     response_latency = 8
     mshrs = 16
     tgts_per_mshr = 8
