@@ -52,7 +52,7 @@ def test_spectre_pht_icelake():
             gem5_exec,
             icelake_config,
             useC3(False),
-            "-c tests/safeside/build/demos/spectre_v1_pht_sa",
+            "-c tests/c3_tests/c3-safeside/build/demos/spectre_v1_pht_sa",
         ]
     )
     gem5_output = subprocess.check_output(

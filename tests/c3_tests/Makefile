@@ -1,6 +1,6 @@
 SHELL := /bin/bash
 
-build: ../../build/X86/gem5.opt ./hello_c3
+build: ../../build/X86/gem5.opt c3_glibc
 
 # NOTE: If this repository is not cloned with --recursive-submodules,
 # much of this will not work!
@@ -12,8 +12,8 @@ GLIBC = ${C3_SIMULATOR_REPO}/glibc/glibc-2.30_install
 c3_glibc:
 	bash ${C3_SIMULATOR_REPO}/glibc/make_glibc.sh
 
-./hello_c3: ./hello_c3.c
-	gcc \
+hello_c3: ./hello_c3.c
+	gcc -O1\
 		-L ${GLIBC}/lib \
 		-I ${GLIBC}/include \
 		-Wl,--rpath=${GLIBC}/lib \
@@ -25,5 +25,7 @@ c3_glibc:
 	cd ../..; \
 	scons build/X86/gem5.opt -j$$((`nproc`+1))
 
-test: build
+test: build hello_c3
 	pytest .
+
+.PHONY: ../../build/X86/gem5.opt
