@@ -61,6 +61,20 @@ class BaseMMU : public SimObject
         virtual ~Translation()
         {}
 
+        uint8_t _pointerDecryptionTimer;
+
+        // The pointer decryption timer is just a counter which decrements
+        // until 0.
+        void continueDecryptingPointer() {
+          if (_pointerDecryptionTimer != 0)
+            _pointerDecryptionTimer--;
+        }
+
+        // Decryption has finished when the counter is at 0.
+        bool isDoneDecryptingPointer() {
+            return _pointerDecryptionTimer == 0;
+        }
+
         /**
          * Signal that the translation has been delayed due to a hw page table
          * walk.

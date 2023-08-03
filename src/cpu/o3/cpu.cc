@@ -1577,6 +1577,7 @@ CPU::pushRequest(const DynInstPtr& inst, bool isLoad, uint8_t *data,
     // Here's where Intel's LAM48 can fit -- right before translation.
     // (unimportant) TODO: condition the following on CR3 bits.
     // TODO: make this macro'd out if we aren't using X86
+    inst->encodedPointer(false);
     bool do_LAM = true;
     if (do_LAM) {
         // if bits 63 and 47 don't match, the check fails! Throw #GP.
@@ -1585,23 +1586,20 @@ CPU::pushRequest(const DynInstPtr& inst, bool isLoad, uint8_t *data,
         }
 #define C3
 #ifdef C3
-// TODO: make this an se.py option
-        Addr dec_addr = cryptoModule.decode_pointer(addr);
+// TODO: make the above macroing an se.py option
+        // retrieve the `size` bits (bits 62:57) of the address
         uint64_t addr_size = (addr & (0b111111llu << 57)) >> 57;
 
-        // if size is 0 or 1, do nothing; else addr := dec_addr
-        if ((addr_size == 0) || (addr_size == 0b111111)) {
-            addr = addr;
-            inst->encodedPointer(false); // mark it as LA
-        } else {
-            addr = dec_addr;
-            inst->encodedPointer(true); // mark it as CA
-        }
-#endif
+        // if size is 0 or -1, we're accessing an LA.
+        // otherwise, mark this pointer as a CA
+        bool isEncoded = !((addr_size == 0) || (addr_size == 0b111111));
+        inst->encodedPointer(isEncoded);
+#else
         /** otherwise, perform masking: sign-extend from bit 47
         (this discards bits 63:48) */
         addr = (addr << 16);
         addr = (Addr) (((int64_t) addr) >> 16);
+#endif
     }
 
         return iew.ldstQueue.pushRequest(inst, isLoad, data, size, addr,

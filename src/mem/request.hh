@@ -442,9 +442,11 @@ class Request
      */
     bool _systemReq = 0;
 
+    public:
     /** The virtual address of the request. */
     Addr _vaddr = MaxAddr;
 
+    private:
     /**
      * Extra data for the request, such as the return value of
      * store conditional or the compare value for a CAS. */

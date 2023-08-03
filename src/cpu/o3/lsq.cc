@@ -779,6 +779,9 @@ LSQ::dumpInsts(ThreadID tid) const
     thread.at(tid).dumpInsts();
 }
 
+// TODO make this a runtime argument
+#define PTR_DECRYPTION_DELAY 3
+
 Fault
 LSQ::pushRequest(const DynInstPtr& inst, bool isLoad, uint8_t *data,
         unsigned int size, Addr addr, Request::Flags flags, uint64_t *res,
@@ -808,6 +811,10 @@ LSQ::pushRequest(const DynInstPtr& inst, bool isLoad, uint8_t *data,
     if (inst->translationStarted()) {
         request = inst->savedRequest;
         assert(request);
+        if (!(inst->translationCompleted())) {
+            request->_reqs.clear();
+            request->initiateTranslation();
+        }
     } else {
         if (htm_cmd || tlbi_cmd) {
             assert(addr == 0x0lu);
@@ -829,11 +836,18 @@ LSQ::pushRequest(const DynInstPtr& inst, bool isLoad, uint8_t *data,
         // a strictly ordered load
         inst->getFault() = NoFault;
 
+        // Initialize the pointer decryption delay.
+        request->_pointerDecryptionTimer =
+            (inst->encodedPointer())? PTR_DECRYPTION_DELAY : 0;
+        inst->isWaitingOnLA(inst->encodedPointer());
         request->initiateTranslation();
     }
 
-    /* This is the place were instructions get the effAddr. */
-    if (request->isTranslationComplete()) {
+    /* This is the place where instructions get the effAddr. */
+    // TODO: When is isDoneDecrypting needed by for PredTLB?
+    if (request->isTranslationComplete() &&
+        request->isDoneDecryptingPointer())
+    {
         if (request->isMemAccessRequired()) {
             inst->effAddr = request->getVaddr();
             inst->effSize = size;
@@ -1150,6 +1164,18 @@ LSQ::LSQRequest::contextId() const
 void
 LSQ::LSQRequest::sendFragmentToTranslation(int i)
 {
+    if (!this->isDoneDecryptingPointer()) {
+        this->markDelayed();
+        return;
+    }
+    // Without PredTLB, we only start translation once the pointer
+    // has finished decrypting. TODO: How will PredTLB affect this?
+    if (this->_inst->encodedPointer()) {
+        this->_addr = this->_inst->cpu->cryptoModule.decode_pointer(
+            this->_addr);
+        req(i)->_vaddr = this->_inst->cpu->cryptoModule.decode_pointer(
+            req(i)->_vaddr);
+    }
     numInTranslationFragments++;
     _port.getMMUPtr()->translateTiming(req(i), _inst->thread->getTC(),
             this, isLoad() ? BaseMMU::Read : BaseMMU::Write);

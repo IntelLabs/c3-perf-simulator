@@ -251,7 +251,7 @@ class LSQ
         std::vector<RequestPtr> _reqs;
         std::vector<Fault> _fault;
         uint64_t* _res;
-        const Addr _addr;
+        Addr _addr;
         const uint32_t _size;
         const Request::Flags _flags;
         std::vector<bool> _byteEnable;

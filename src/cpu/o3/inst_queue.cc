@@ -1133,9 +1133,24 @@ InstructionQueue::cacheUnblocked()
 DynInstPtr
 InstructionQueue::getDeferredMemInstToExecute()
 {
+    for (ListIt ix = deferredMemInsts.begin(); ix != deferredMemInsts.end();
+         ++ix) {
+            if (!(*ix)->isSquashed()) {
+                // Squashing resets the savedRequest (and that's OK)
+                assert((*ix)->savedRequest);
+                (*ix)->savedRequest->continueDecryptingPointer();
+            }
+         }
     for (ListIt it = deferredMemInsts.begin(); it != deferredMemInsts.end();
          ++it) {
-        if ((*it)->translationCompleted() || (*it)->isSquashed()) {
+        if (
+            (*it)->isSquashed() ||
+            ((*it)->isWaitingOnLA() &&
+                (*it)->savedRequest->isDoneDecryptingPointer()) ||
+            ((*it)->translationCompleted())
+            )
+        {
+            (*it)->isWaitingOnLA(false);
             DynInstPtr mem_inst = std::move(*it);
             deferredMemInsts.erase(it);
             return mem_inst;

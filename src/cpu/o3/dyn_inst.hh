@@ -186,8 +186,9 @@ class DynInst : public ExecContext, public RefCounted
         ReqMade,
         MemOpDone,
         HtmFromTransaction,
+        EncodedPointer,          /// Type of the address pointer (CA or LA)
+        WaitingOnLA,  /// Did we defer the instruction due to ptr decryption?
         MaxFlags,
-        EncodedPointer          /// Type of the address pointer (CA or LA)
     };
 
   private:
@@ -454,6 +455,9 @@ class DynInst : public ExecContext, public RefCounted
     {
         return (translationStarted() && !translationCompleted());
     }
+
+    bool isWaitingOnLA() const { return instFlags[WaitingOnLA]; }
+    void isWaitingOnLA(bool f) { instFlags[WaitingOnLA] = f; }
 
   public:
 #ifdef DEBUG
