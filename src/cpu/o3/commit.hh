@@ -485,6 +485,8 @@ class Commit
         statistics::Vector opsCommitted;
         /** Stat for the total number of committed memory references. */
         statistics::Vector memRefs;
+        /** Stat for mem insts committed which use CAs. */
+        statistics::Vector cryptoAddrCommittedInsts;
         /** Stat for the total number of committed loads. */
         statistics::Vector loads;
         /** Stat for the total number of committed atomics. */

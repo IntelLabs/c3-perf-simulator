@@ -162,7 +162,10 @@ Commit::CommitStats::CommitStats(CPU *cpu, Commit *commit)
                "Number of ops (including micro ops) committed"),
       ADD_STAT(memRefs, statistics::units::Count::get(),
                "Number of memory references committed"),
-      ADD_STAT(loads, statistics::units::Count::get(), "Number of loads committed"),
+      ADD_STAT(cryptoAddrCommittedInsts, statistics::units::Count::get(),
+               "Number of memory references committed which use CAs"),
+      ADD_STAT(loads, statistics::units::Count::get(),
+               "Number of loads committed"),
       ADD_STAT(amos, statistics::units::Count::get(),
                "Number of atomic instructions committed"),
       ADD_STAT(membars, statistics::units::Count::get(),
@@ -201,6 +204,10 @@ Commit::CommitStats::CommitStats(CPU *cpu, Commit *commit)
         .flags(total);
 
     memRefs
+        .init(cpu->numThreads)
+        .flags(total);
+
+    cryptoAddrCommittedInsts
         .init(cpu->numThreads)
         .flags(total);
 
@@ -1405,6 +1412,9 @@ Commit::updateComInstStats(const DynInstPtr &inst)
     if (inst->isMemRef()) {
         stats.memRefs[tid]++;
 
+        if (inst->encodedPointer()) {
+                stats.cryptoAddrCommittedInsts[tid]++;
+        }
         if (inst->isLoad()) {
             stats.loads[tid]++;
         }
