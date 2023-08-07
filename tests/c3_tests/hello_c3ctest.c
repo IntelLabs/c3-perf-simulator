@@ -19,8 +19,8 @@
 */
 
 int main() {
-    char* hello = (char*) malloc(4 * sizeof(char));
-    char* goodbye = (char*) malloc(5 * sizeof(char));
+    volatile char* hello = (char*) malloc(4 * sizeof(char));
+    volatile char* goodbye = (char*) malloc(5 * sizeof(char));
 
     printf("Array 1 @ %016lx\n", (uint64_t) hello);
     printf("Array 2 @ %016lx\n", (uint64_t) goodbye);
