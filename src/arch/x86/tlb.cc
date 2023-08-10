@@ -106,7 +106,7 @@ TLB::insert(Addr vpn, const TlbEntry &entry, uint64_t pcid)
     vpn = concAddrPcid(vpn, pcid);
 
     // If somebody beat us to it, just use that existing entry.
-    TlbEntry *newEntry = trie.lookup(vpn);
+    TlbEntry *newEntry = trie.lookup(vpn, false);
     if (newEntry) {
         assert(newEntry->vaddr == vpn);
         return newEntry;
@@ -133,9 +133,10 @@ TLB::insert(Addr vpn, const TlbEntry &entry, uint64_t pcid)
 }
 
 TlbEntry *
-TLB::lookup(Addr va, bool update_lru)
+TLB::lookup(Addr va, bool update_lru, bool is_predictive)
 {
-    TlbEntry *entry = trie.lookup(va);
+    TlbEntry *entry = trie.lookup(va, is_predictive);
+    // NOTE: PredTLB can affect lru bits!
     if (entry && update_lru)
         entry->lruSeq = nextSeq();
     return entry;
@@ -176,7 +177,7 @@ TLB::flushNonGlobal()
 void
 TLB::demapPage(Addr va, uint64_t asn)
 {
-    TlbEntry *entry = trie.lookup(va);
+    TlbEntry *entry = trie.lookup(va, false);
     if (entry) {
         trie.remove(entry->trieHandle);
         entry->trieHandle = NULL;
@@ -329,6 +330,11 @@ TLB::translate(const RequestPtr &req,
 
     delayedResponse = false;
 
+    // TODO: Select is_predictive based on args.
+    // PREDTLB: bool is_predictive =
+    // (translation->_pointerDecryptionTimer != 0);
+    bool is_predictive = false;
+
     // If this is true, we're dealing with a request to a non-memory address
     // space.
     if (seg == segment_idx::Ms) {
@@ -416,11 +422,17 @@ TLB::translate(const RequestPtr &req,
                 pcid = 0x000;
 
             pageAlignedVaddr = concAddrPcid(pageAlignedVaddr, pcid);
-            TlbEntry *entry = lookup(pageAlignedVaddr);
+            TlbEntry *entry = lookup(pageAlignedVaddr, true, is_predictive);
 
             if (mode == BaseMMU::Read) {
+                if (is_predictive) {
+                    stats.predRdAccesses++;
+                }
                 stats.rdAccesses++;
             } else {
+                if (is_predictive) {
+                    stats.predWrAccesses++;
+                }
                 stats.wrAccesses++;
             }
             if (!entry) {
@@ -573,10 +585,15 @@ TLB::TlbStats::TlbStats(statistics::Group *parent)
              "TLB accesses on read requests"),
     ADD_STAT(wrAccesses, statistics::units::Count::get(),
              "TLB accesses on write requests"),
+    ADD_STAT(predRdAccesses, statistics::units::Count::get(),
+             "PredTLB accesses on read requests"),
+    ADD_STAT(predWrAccesses, statistics::units::Count::get(),
+             "PredTLB accesses on write requests"),
     ADD_STAT(rdMisses, statistics::units::Count::get(),
              "TLB misses on read requests"),
     ADD_STAT(wrMisses, statistics::units::Count::get(),
              "TLB misses on write requests")
+    // TODO: add stats for predTLB mispredictions elsewhere
 {
 }
 

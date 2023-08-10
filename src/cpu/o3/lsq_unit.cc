@@ -1252,6 +1252,44 @@ LSQUnit::startStaleTranslationFlush()
     }
 }
 
+void
+LSQUnit::LSQEntry::progressPointerDecryption()
+{
+    // entry.hasRequest is only true after translation.
+    // But entry.instruction() is available immediately at dispatch,
+    // and requests are available thru the DynInst at first execute.
+    if (instruction() == NULL) return;
+
+    // this should never happen
+    if (instruction()->savedRequest == NULL) return;
+
+    // hasLA is always true for LAs
+    if (!(instruction()->encodedPointer)) return;
+
+    bool instDoneWithPtrDec = true;
+    for (auto& req : instruction()->savedRequest->_reqs) {
+        if (req) {
+            req->continueDecryptingPointer();
+            instDoneWithPtrDec = instDoneWithPtrDec &&
+                req->isDoneDecryptingPointer();
+        }
+    }
+    instruction()->hasLA(instDoneWithPtrDec);
+}
+
+void
+LSQUnit::progressPointerDecryption()
+{
+    // TODO: this logic will not work if any instruction can live in
+    // both the load queue and the store queue at once!
+    for (auto& entry : loadQueue) {
+        entry.progressPointerDecryption();
+    }
+    for (auto& entry : storeQueue) {
+        entry.progressPointerDecryption();
+    }
+}
+
 bool
 LSQUnit::checkStaleTranslations() const
 {

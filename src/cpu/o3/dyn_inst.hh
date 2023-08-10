@@ -187,7 +187,8 @@ class DynInst : public ExecContext, public RefCounted
         MemOpDone,
         HtmFromTransaction,
         EncodedPointer,          /// Type of the address pointer (CA or LA)
-        WaitingOnLA,  /// Did we defer the instruction due to ptr decryption?
+        HasLA,  /// Did we defer the instruction due to ptr decryption?
+        UsedPredTLB,  /// Did translation finish before ptr decryption?
         MaxFlags,
     };
 
@@ -415,6 +416,11 @@ class DynInst : public ExecContext, public RefCounted
     bool encodedPointer() const { return instFlags[EncodedPointer]; }
     void encodedPointer(bool f) { instFlags[EncodedPointer] = f; }
 
+    /** True if a predictive TLB lookup hit (and so we translated before
+     * pointer decryption ended) */
+    bool usedPredTLB() const { return instFlags[UsedPredTLB]; }
+    void usedPredTLB(bool f) { instFlags[UsedPredTLB] = f; }
+
     /** True if the DTB address translation has completed. */
     bool
     translationCompleted() const
@@ -456,8 +462,8 @@ class DynInst : public ExecContext, public RefCounted
         return (translationStarted() && !translationCompleted());
     }
 
-    bool isWaitingOnLA() const { return instFlags[WaitingOnLA]; }
-    void isWaitingOnLA(bool f) { instFlags[WaitingOnLA] = f; }
+    bool hasLA() const { return instFlags[HasLA]; }
+    void hasLA(bool f) { instFlags[HasLA] = f; }
 
   public:
 #ifdef DEBUG

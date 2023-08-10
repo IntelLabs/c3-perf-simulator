@@ -180,6 +180,11 @@ LSQ::tick()
 
     usedLoadPorts = 0;
     usedStorePorts = 0;
+
+    // Also update the pointer decryption timers on all insts.
+    for (auto &unit: thread) {
+        unit.progressPointerDecryption();
+    }
 }
 
 bool
@@ -812,8 +817,9 @@ LSQ::pushRequest(const DynInstPtr& inst, bool isLoad, uint8_t *data,
         request = inst->savedRequest;
         assert(request);
         if (!(inst->translationCompleted())) {
-            request->_reqs.clear();
-            request->initiateTranslation();
+            for (int i = 0; i < request->_reqs.size(); i++) {
+                request->sendFragmentToTranslation(i);
+            }
         }
     } else {
         if (htm_cmd || tlbi_cmd) {
@@ -837,17 +843,18 @@ LSQ::pushRequest(const DynInstPtr& inst, bool isLoad, uint8_t *data,
         inst->getFault() = NoFault;
 
         // Initialize the pointer decryption delay.
-        request->_pointerDecryptionTimer =
-            (inst->encodedPointer())? PTR_DECRYPTION_DELAY : 0;
-        inst->isWaitingOnLA(inst->encodedPointer());
+        inst->hasLA(!inst->encodedPointer());
+        inst->usedPredTLB(false);  // (we haven't used PredTLB yet)
         request->initiateTranslation();
     }
 
     /* This is the place where instructions get the effAddr. */
-    // TODO: When is isDoneDecrypting needed by for PredTLB?
-    if (request->isTranslationComplete() &&
-        request->isDoneDecryptingPointer())
+    if (request->isTranslationComplete())
     {
+        // mark if we used PredTLB, so we can check for rollback
+        // TODO: verify this condition... it might make some big assumptions.
+        inst->usedPredTLB(!inst->hasLA());
+
         if (request->isMemAccessRequired()) {
             inst->effAddr = request->getVaddr();
             inst->effSize = size;
@@ -1126,6 +1133,10 @@ LSQ::LSQRequest::addReq(Addr addr, unsigned size,
                 std::move(_amo_op));
         req->setByteEnable(byte_enable);
 
+        // How long will this request take to do pointer decryption?
+        bool is_crypto = _inst->encodedPointer();
+        req->setPointerDecryptionTimer(is_crypto? PTR_DECRYPTION_DELAY : 0);
+
         /* If the request is marked as NO_ACCESS, setup a local access */
         if (_flags.isSet(Request::NO_ACCESS)) {
             req->setLocalAccessor(
@@ -1164,18 +1175,19 @@ LSQ::LSQRequest::contextId() const
 void
 LSQ::LSQRequest::sendFragmentToTranslation(int i)
 {
-    if (!this->isDoneDecryptingPointer()) {
+    ///** Uncomment this block to use blocking pointer decryption!
+    if (!req(i)->isDoneDecryptingPointer()) {
         this->markDelayed();
         return;
     }
-    // Without PredTLB, we only start translation once the pointer
-    // has finished decrypting. TODO: How will PredTLB affect this?
+
     if (this->_inst->encodedPointer()) {
         this->_addr = this->_inst->cpu->cryptoModule.decode_pointer(
             this->_addr);
         req(i)->_vaddr = this->_inst->cpu->cryptoModule.decode_pointer(
             req(i)->_vaddr);
     }
+    //*/
     numInTranslationFragments++;
     _port.getMMUPtr()->translateTiming(req(i), _inst->thread->getTC(),
             this, isLoad() ? BaseMMU::Read : BaseMMU::Write);

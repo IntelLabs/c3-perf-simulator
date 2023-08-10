@@ -70,6 +70,8 @@ DynInst::DynInst(const Arrays &arrays, const StaticInstPtr &static_inst,
     instFlags[Predicate] = true;
     instFlags[MemAccPredicate] = true;
 
+    savedRequest = NULL;
+
 #ifndef NDEBUG
     ++cpu->instcount;
 

@@ -73,7 +73,8 @@ namespace X86ISA
 
         void takeOverFrom(BaseTLB *otlb) override {}
 
-        TlbEntry *lookup(Addr va, bool update_lru = true);
+        TlbEntry *lookup(Addr va, bool update_lru = true,
+          bool isPredictive = false);
 
         void setConfigAddress(uint32_t addr);
         //concatenate Page Addr and pcid
@@ -115,6 +116,8 @@ namespace X86ISA
 
             statistics::Scalar rdAccesses;
             statistics::Scalar wrAccesses;
+            statistics::Scalar predRdAccesses;
+            statistics::Scalar predWrAccesses;
             statistics::Scalar rdMisses;
             statistics::Scalar wrMisses;
         } stats;

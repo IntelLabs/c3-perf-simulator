@@ -1133,24 +1133,18 @@ InstructionQueue::cacheUnblocked()
 DynInstPtr
 InstructionQueue::getDeferredMemInstToExecute()
 {
-    for (ListIt ix = deferredMemInsts.begin(); ix != deferredMemInsts.end();
-         ++ix) {
-            if (!(*ix)->isSquashed()) {
-                // Squashing resets the savedRequest (and that's OK)
-                assert((*ix)->savedRequest);
-                (*ix)->savedRequest->continueDecryptingPointer();
-            }
-         }
+    // TODO: In translation, only use PredTLB if the LA is not available.
+    // If pointer decryption uses PredTLB, hasLA is always true.
+    // If pointer decryption delays translation, hasLA eventually becomes
+    // true, so try to translate again until it is.
     for (ListIt it = deferredMemInsts.begin(); it != deferredMemInsts.end();
          ++it) {
         if (
             (*it)->isSquashed() ||
-            ((*it)->isWaitingOnLA() &&
-                (*it)->savedRequest->isDoneDecryptingPointer()) ||
+            (!(*it)->hasLA()) ||  //
             ((*it)->translationCompleted())
             )
         {
-            (*it)->isWaitingOnLA(false);
             DynInstPtr mem_inst = std::move(*it);
             deferredMemInsts.erase(it);
             return mem_inst;

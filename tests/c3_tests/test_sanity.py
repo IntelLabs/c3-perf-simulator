@@ -66,7 +66,12 @@ def test_spectre_pht_icelake():
 )
 def test_ccptrenc():
     gem5_cmd = " ".join(
-        [gem5_exec, icelake_config, useC3(True), "-c tests/c3_tests/hello_c3"]
+        [
+            gem5_exec,
+            icelake_config,
+            useC3(True),
+            "-c tests/c3_tests/hello_c3ctest",
+        ]
     )
     gem5_output = subprocess.check_output(
         gem5_cmd, shell=True, cwd=gem5_dir

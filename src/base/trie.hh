@@ -198,6 +198,40 @@ class Trie
         return NULL;
     }
 
+    /**
+     * Method which is similar to lookupHandle, but returns the first
+     * leaf descendent (if there is one) of the node matching n bits of
+     * Key. Basically, this is a partial lookup (used for PredTLB).
+    */
+    Handle
+    lookupPrefix(Key key, uint32_t bits) {
+        assert(bits < (sizeof(Key) * 8));  // if not partial, use lookupHandle
+        Node* node = &head;
+        // first, navigate to the node using the key
+        for (uint32_t i = 0; (node != NULL) && (i < bits); i++) {
+            if (node->kids[0] && node->kids[0]->matches(key))
+                node = node->kids[0];
+            else if (node->kids[1] && node->kids[1]->matches(key))
+                node = node->kids[1];
+            else
+                node = NULL;
+        }
+        // then navigate to its first descendent (not using the key)
+        if (node) {  // if node is present, it must have a leaf descendent
+            while (!(node->value)) {
+                if (node->kids[0]) {
+                    node = node->kids[0];
+                } else if (node->kids[1]) {
+                    node = node->kids[1];
+                } else {
+                    assert(false && "lookupPrefix broke!");
+                }
+            }
+            return node;
+        }
+        return NULL;
+    }
+
   public:
     /**
      * Method which inserts a key/value pair into the trie.
@@ -214,6 +248,9 @@ class Trie
         // We use NULL value pointers to mark internal nodes of the trie, so
         // we don't allow inserting them as real values.
         assert(val);
+
+        // reversed trie!
+        key = reverse_key(key);
 
         // Build a mask which masks off all the bits we don't care about.
         Key new_mask = ~(Key)0;
@@ -290,6 +327,23 @@ class Trie
     }
 
     /**
+     * Silly but helpful utility function: reverse a key for the trie.
+     * (We're going to be internally storing the TLB as a *reversed*
+     *  trie in order to support address suffix matching.)
+    */
+
+    Key reverse_key(Key in)
+    {
+        Key out = 0;
+        while (in) {
+            out <<= 1;          // shift out left
+            out |= (in & 1);    // copy in's last bit to out
+            in >>= 1;           // shift in right, discarding last bit
+        }
+        return out;
+    }
+
+    /**
      * Method which looks up the Value corresponding to a particular key.
      * @param key The key to look up.
      * @return The first Value matching this key, or NULL if none was found.
@@ -297,9 +351,17 @@ class Trie
      * @ingroup api_base_utils
      */
     Value *
-    lookup(Key key)
+    lookup(Key key, bool is_predictive)
     {
-        Node *node = lookupHandle(key);
+        Node *node = NULL;
+        if (is_predictive) {
+            // the bottom 34 bits are unencrypted.
+            // a PredTLB lookup hits iff any key matches these bits.
+            node = lookupPrefix(reverse_key(key), 34);
+        } else {
+            node = lookupHandle(reverse_key(key));
+        }
+
         if (node)
             return node->value;
         else

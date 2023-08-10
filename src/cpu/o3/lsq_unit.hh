@@ -105,6 +105,11 @@ class LSQUnit
         bool _valid = false;
 
       public:
+        LSQEntry()
+        {
+          clear();
+        }
+
         ~LSQEntry()
         {
             if (_request != nullptr) {
@@ -112,6 +117,8 @@ class LSQUnit
                 _request = nullptr;
             }
         }
+
+        void progressPointerDecryption();
 
         void
         clear()
@@ -169,6 +176,7 @@ class LSQUnit
         SQEntry()
         {
             std::memset(_data, 0, DataSize);
+            clear();
         }
 
         void set(const DynInstPtr& inst) { LSQEntry::set(inst); }
@@ -319,6 +327,9 @@ class LSQUnit
     // Stale translation checks
     void startStaleTranslationFlush();
     bool checkStaleTranslations() const;
+
+    // do C3 pointer decryption tick
+    void progressPointerDecryption();
 
     /** Returns if either the LQ or SQ is full. */
     bool isFull() { return lqFull() || sqFull(); }
