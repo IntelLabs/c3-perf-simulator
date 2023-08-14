@@ -1264,7 +1264,7 @@ LSQUnit::LSQEntry::progressPointerDecryption()
     if (instruction()->savedRequest == NULL) return;
 
     // hasLA is always true for LAs
-    if (!(instruction()->encodedPointer)) return;
+    if (!(instruction()->encodedPointer())) return;
 
     bool instDoneWithPtrDec = true;
     for (auto& req : instruction()->savedRequest->_reqs) {
