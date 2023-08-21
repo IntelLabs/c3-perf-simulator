@@ -1486,7 +1486,9 @@ LSQUnit::read(LSQRequest *request, ssize_t load_idx)
                 coverage = AddrRangeCoverage::PartialAddrRangeCoverage;
             }
 
-            if (coverage == AddrRangeCoverage::FullAddrRangeCoverage) {
+            // C3: For this release, disable STLF
+            //if (coverage == AddrRangeCoverage::FullAddrRangeCoverage) {
+            if (false) {
                 // Get shift amount for offset into the store's data.
                 int shift_amt = request->mainReq()->getVaddr() -
                     store_it->instruction()->effAddr;
@@ -1563,7 +1565,8 @@ LSQUnit::read(LSQRequest *request, ssize_t load_idx)
 
                 return NoFault;
             } else if (
-                    coverage == AddrRangeCoverage::PartialAddrRangeCoverage) {
+                    coverage == AddrRangeCoverage::PartialAddrRangeCoverage ||
+                    coverage == AddrRangeCoverage::FullAddrRangeCoverage) {
                 // If it's already been written back, then don't worry about
                 // stalling on it.
                 if (store_it->completed()) {
