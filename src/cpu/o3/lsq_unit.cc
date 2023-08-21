@@ -763,10 +763,22 @@ LSQUnit::commitStores(InstSeqNum &youngest_inst)
             if (x.instruction()->seqNum > youngest_inst) {
                 break;
             }
+
+            // Pending data keystream generation for a CA, avoid 
+            // enabling write-back for subsequent stores.
+            if (x.instruction()->encodedPointer() &&
+            !x.instruction()->isDataKeyGenReady()){
+                DPRINTF(LSQUnit, "Store [sn:%lli] data key gen is not ready yet\n", x.instruction()->seqNum);
+                break;
+            }
+            assert(!x.instruction()->encodedPointer() ||
+            (x.instruction()->encodedPointer() && x.instruction()->isDataKeyGenReady()));
+
             DPRINTF(LSQUnit, "Marking store as able to write back, PC "
-                    "%s [sn:%lli]\n",
+                    "%s [sn:%lli], Store Type: %s\n",
                     x.instruction()->pcState(),
-                    x.instruction()->seqNum);
+                    x.instruction()->seqNum,
+                    x.instruction()->encodedPointer() ? "CA" : "LA");
 
             x.canWB() = true;
 
