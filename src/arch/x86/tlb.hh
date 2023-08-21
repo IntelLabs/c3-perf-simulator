@@ -116,10 +116,16 @@ namespace X86ISA
 
             statistics::Scalar rdAccesses;
             statistics::Scalar wrAccesses;
+            statistics::Scalar cryptoRdAccesses;
+            statistics::Scalar cryptoWrAccesses;
             statistics::Scalar predRdAccesses;
             statistics::Scalar predWrAccesses;
             statistics::Scalar rdMisses;
             statistics::Scalar wrMisses;
+            statistics::Scalar cryptoReadPredTLBCorrect;
+            statistics::Scalar cryptoWritePredTLBCorrect;
+            statistics::Scalar linearReadPredTLBCorrect;
+            statistics::Scalar linearWritePredTLBCorrect;
         } stats;
 
         Fault translateInt(bool read, RequestPtr req, ThreadContext *tc);

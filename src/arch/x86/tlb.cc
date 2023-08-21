@@ -48,6 +48,7 @@
 #include "arch/x86/regs/msr.hh"
 #include "arch/x86/x86_traits.hh"
 #include "base/trace.hh"
+#include "cpu/o3/cpu.hh"
 #include "cpu/thread_context.hh"
 #include "debug/TLB.hh"
 #include "mem/packet_access.hh"
@@ -332,7 +333,9 @@ TLB::translate(const RequestPtr &req,
 
     // TODO: Select is_predictive based on args.
     // PREDTLB: bool is_predictive =
-    // (translation->_pointerDecryptionTimer != 0);
+    // (req->_pointerDecryptionTimer != 0);
+    // (and there are some more conditions based on reissues... TODO)
+
     bool is_predictive = false;
 
     // If this is true, we're dealing with a request to a non-memory address
@@ -422,17 +425,48 @@ TLB::translate(const RequestPtr &req,
                 pcid = 0x000;
 
             pageAlignedVaddr = concAddrPcid(pageAlignedVaddr, pcid);
-            TlbEntry *entry = lookup(pageAlignedVaddr, true, is_predictive);
+
+            // The second parameter of lookup determines if
+            // it affects LRU bits. Our predictive lookup should currently
+            // have no effect on the TLB state.
+
+            TlbEntry* pred_entry = lookup(pageAlignedVaddr, false, true);
+            TlbEntry* entry = lookup(pageAlignedVaddr, true, is_predictive);
+
+            if (entry && !is_predictive) {
+                // assumption: one entry (ptr) per page-aligned vaddr.
+                // If this implementation is correct, any real TLB
+                // hit must also be a PredTLB hit (though maybe
+                // an incorrect PredTLB hit)
+                assert(pred_entry);
+                if (pred_entry == entry) {
+                    if (req->_isCrypto) {
+                        // (note: with PredTLB enabled, this is dead code)
+                        if (mode == BaseMMU::Read)
+                            stats.cryptoReadPredTLBCorrect++;
+                        else
+                            stats.cryptoWritePredTLBCorrect++;
+                    }
+                    else {
+                        if (mode == BaseMMU::Read)
+                            stats.linearReadPredTLBCorrect++;
+                        else
+                            stats.linearWritePredTLBCorrect++;
+                    }
+                }
+            }
 
             if (mode == BaseMMU::Read) {
-                if (is_predictive) {
+                if (is_predictive)
                     stats.predRdAccesses++;
-                }
+                if (req->_isCrypto)
+                    stats.cryptoRdAccesses++;
                 stats.rdAccesses++;
             } else {
-                if (is_predictive) {
+                if (is_predictive)
                     stats.predWrAccesses++;
-                }
+                if (req->_isCrypto)
+                    stats.cryptoWrAccesses++;
                 stats.wrAccesses++;
             }
             if (!entry) {
@@ -585,6 +619,10 @@ TLB::TlbStats::TlbStats(statistics::Group *parent)
              "TLB accesses on read requests"),
     ADD_STAT(wrAccesses, statistics::units::Count::get(),
              "TLB accesses on write requests"),
+    ADD_STAT(cryptoRdAccesses, statistics::units::Count::get(),
+             "TLB accesses on read requests to CAs"),
+    ADD_STAT(cryptoWrAccesses, statistics::units::Count::get(),
+             "TLB accesses on write requests to CAs"),
     ADD_STAT(predRdAccesses, statistics::units::Count::get(),
              "PredTLB accesses on read requests"),
     ADD_STAT(predWrAccesses, statistics::units::Count::get(),
@@ -592,8 +630,15 @@ TLB::TlbStats::TlbStats(statistics::Group *parent)
     ADD_STAT(rdMisses, statistics::units::Count::get(),
              "TLB misses on read requests"),
     ADD_STAT(wrMisses, statistics::units::Count::get(),
-             "TLB misses on write requests")
-    // TODO: add stats for predTLB mispredictions elsewhere
+             "TLB misses on write requests"),
+    ADD_STAT(cryptoReadPredTLBCorrect, statistics::units::Count::get(),
+             "TLB read accesses where PredTLB also correctly hits, on CAs"),
+    ADD_STAT(cryptoWritePredTLBCorrect, statistics::units::Count::get(),
+             "TLB write accesses where PredTLB also correctly hits, on CAs"),
+    ADD_STAT(linearReadPredTLBCorrect, statistics::units::Count::get(),
+             "TLB read accesses where PredTLB also correctly hits, on LAs"),
+    ADD_STAT(linearWritePredTLBCorrect, statistics::units::Count::get(),
+             "TLB write accesses where PredTLB also correctly hits, on LAs")
 {
 }
 

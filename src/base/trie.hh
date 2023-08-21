@@ -29,6 +29,7 @@
 #ifndef __BASE_TRIE_HH__
 #define __BASE_TRIE_HH__
 
+#include <bit>
 #include <cassert>
 #include <iostream>
 #include <type_traits>
@@ -167,9 +168,14 @@ class Trie
     Key
     extendMask(Key orig)
     {
+        // C3: We're reversing everything, so this needs to become a left shift
+        /*
         // Just in case orig was 0.
         const Key msb = 1ULL << (MaxBits - 1);
         return orig | (orig >> 1) | msb;
+        */
+        const Key lsb = 1ULL;
+        return orig | (orig << 1) | lsb;
     }
 
     /**
@@ -207,8 +213,11 @@ class Trie
     lookupPrefix(Key key, uint32_t bits) {
         assert(bits < (sizeof(Key) * 8));  // if not partial, use lookupHandle
         Node* node = &head;
-        // first, navigate to the node using the key
-        for (uint32_t i = 0; (node != NULL) && (i < bits); i++) {
+        // Navigate to the node which both matches the key and
+        // has at least <bits> bits in its mask.
+        // (NOTE: This popcount might require gcc to be used...
+        // but that should be fine.)
+        while (node && (__builtin_popcountll((uint64_t) node->mask) < bits)) {
             if (node->kids[0] && node->kids[0]->matches(key))
                 node = node->kids[0];
             else if (node->kids[1] && node->kids[1]->matches(key))
@@ -249,13 +258,17 @@ class Trie
         // we don't allow inserting them as real values.
         assert(val);
 
-        // reversed trie!
+        // C3: we're reversing keys in the trie
         key = reverse_key(key);
 
         // Build a mask which masks off all the bits we don't care about.
         Key new_mask = ~(Key)0;
         if (width < MaxBits)
             new_mask <<= (MaxBits - width);
+
+        // C3: we also need to reverse the mask
+        new_mask = reverse_key(new_mask);
+
         // Use it to tidy up the key.
         key &= new_mask;
 

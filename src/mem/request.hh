@@ -494,9 +494,12 @@ class Request
         _byteEnable = std::vector<bool>(size, true);
     }
 
+    bool _isCrypto;
+
     uint8_t _pointerDecryptionTimer;
 
     void setPointerDecryptionTimer(uint8_t cycles) {
+        _isCrypto = !!cycles;
         _pointerDecryptionTimer = cycles;
     }
 
