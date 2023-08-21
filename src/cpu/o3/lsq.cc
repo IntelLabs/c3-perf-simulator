@@ -854,10 +854,13 @@ LSQ::pushRequest(const DynInstPtr& inst, bool isLoad, uint8_t *data,
 
         // Event function wrapper for data keystream generation unit.
         EventFunctionWrapper *dataKeyGen = new EventFunctionWrapper(
-        [this, inst]{ inst->isDataKeyGenReady(true); },
+        [this, inst]{ inst->isDataKeyGenReady(true);
+        DPRINTF(LSQUnit, "Set data keystream generation ready for Inst [sn:%lli].", inst->seqNum);
+        },
         "dataKeyGen", true, Event::CPU_Tick_Pri);
         
         // Schedule the event of data keystream generation.
+        DPRINTF(LSQUnit, "Initialize data keystream generation for Inst [sn:%lli].", inst->seqNum);
         cpu->schedule(dataKeyGen, cpu->clockEdge(
                 Cycles(DATA_KEYSTREAM_GENERATION_DELAY)));
 
