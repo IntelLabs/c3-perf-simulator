@@ -189,6 +189,7 @@ class DynInst : public ExecContext, public RefCounted
         EncodedPointer,          /// Type of the address pointer (CA or LA)
         HasLA,  /// Did we defer the instruction due to ptr decryption?
         UsedPredTLB,  /// Did translation finish before ptr decryption?
+        DataKeyGenReady, /// Did data keystream generation finish?
         MaxFlags,
     };
 
@@ -420,6 +421,10 @@ class DynInst : public ExecContext, public RefCounted
      * pointer decryption ended) */
     bool usedPredTLB() const { return instFlags[UsedPredTLB]; }
     void usedPredTLB(bool f) { instFlags[UsedPredTLB] = f; }
+
+    /** True if the output of data kesytream generator is ready. */
+    bool isDataKeyGenReady() const { return instFlags[DataKeyGenReady]; }
+    void isDataKeyGenReady(bool f) { instFlags[DataKeyGenReady] = f; }
 
     /** True if the DTB address translation has completed. */
     bool

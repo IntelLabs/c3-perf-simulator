@@ -786,6 +786,7 @@ LSQ::dumpInsts(ThreadID tid) const
 
 // TODO make this a runtime argument
 #define PTR_DECRYPTION_DELAY 3
+#define DATA_KEYSTREAM_GENERATION_DELAY 4
 
 Fault
 LSQ::pushRequest(const DynInstPtr& inst, bool isLoad, uint8_t *data,
@@ -845,6 +846,21 @@ LSQ::pushRequest(const DynInstPtr& inst, bool isLoad, uint8_t *data,
         // Initialize the pointer decryption delay.
         inst->hasLA(!inst->encodedPointer());
         inst->usedPredTLB(false);  // (we haven't used PredTLB yet)
+
+        // Set 'isDataKeyGenReady' as 'true' for LAs.
+        if (!inst->encodedPointer()) {
+            inst->isDataKeyGenReady(true);
+        }
+
+        // Event function wrapper for data keystream generation unit.
+        EventFunctionWrapper *dataKeyGen = new EventFunctionWrapper(
+        [this, inst]{ inst->isDataKeyGenReady(true); },
+        "dataKeyGen", true, Event::CPU_Tick_Pri);
+        
+        // Schedule the event of data keystream generation.
+        cpu->schedule(dataKeyGen, cpu->clockEdge(
+                Cycles(DATA_KEYSTREAM_GENERATION_DELAY)));
+
         request->initiateTranslation();
     }
 
