@@ -117,6 +117,9 @@ class CPU : public BaseCPU
     pointer_key_t addr_key_{.size_ = 32,
                             .bytes_ = DEF_ADDR_KEY_BYTES};
 
+    data_key_t data_key_{.size_ = 16,
+                            .bytes_ = DEF_DATA_KEY_BYTES};
+
   private:
 
     /** The tick event used for scheduling CPU ticks. */

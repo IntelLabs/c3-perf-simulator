@@ -1594,6 +1594,8 @@ CPU::pushRequest(const DynInstPtr& inst, bool isLoad, uint8_t *data,
         // otherwise, mark this pointer as a CA
         bool isEncoded = !((addr_size == 0) || (addr_size == 0b111111));
         inst->encodedPointer(isEncoded);
+        // Store the original address for reference
+        inst->_encoded_la = addr;
 #else
         /** otherwise, perform masking: sign-extend from bit 47
         (this discards bits 63:48) */

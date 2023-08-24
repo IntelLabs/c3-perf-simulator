@@ -176,6 +176,22 @@ LSQUnit::completeDataAccess(PacketPtr pkt)
                     pkt->getHtmTransactionFailedInCacheRC() );
             }
 
+            // Data Decryption functionality
+            unsigned size_pkt = pkt->getSize();
+            uint8_t *data_pkt = pkt->data;
+            uint8_t bytes_buffer[64];
+            ptr_metadata_t cc_metadata = {0};
+            uint64_t data_tweak = request->_inst->_encoded_la;
+            data_key_t data_key =  request->_inst->cpu->data_key_;
+            cpu_bytes_t bytes{.size = (int)size_pkt, .data = data_pkt};
+            cpu_bytes_t bytes_mod;
+            DPRINTF(LSQUnit, "Complete data access [sn:%llu]: %s\n", inst->seqNum, inst->encodedPointer() ? "CA" : "LA");
+            if (inst->encodedPointer() && inst->isLoad()) {
+                bytes_mod = request->_inst->cpu->cryptoModule.encrypt_decrypt_bytes(&cc_metadata, data_tweak, &data_key, bytes, bytes_buffer);
+                pkt->data = bytes_mod.data;
+                DPRINTF(LSQUnit, "Data Decryption just happened for inst [sn:%llu]\n", inst->seqNum);
+            }
+
             writeback(inst, request->mainPacket());
             if (inst->isStore() || inst->isAtomic()) {
                 request->writebackDone();
@@ -1669,11 +1685,27 @@ LSQUnit::write(LSQRequest *request, uint8_t *data, ssize_t store_idx)
     storeQueue[store_idx].isAllZeros() = store_no_data;
     assert(size <= SQEntry::DataSize || store_no_data);
 
+    // Data Encryption (data structures)
+    uint8_t bytes_buffer[64];
+    ptr_metadata_t cc_metadata = {0};
+    uint64_t data_tweak = request->_inst->_encoded_la;
+    data_key_t data_key =  request->_inst->cpu->data_key_;
+    cpu_bytes_t bytes{.size = (int)size, .data = data};
+    cpu_bytes_t bytes_mod;
+
     // copy data into the storeQueue only if the store request has valid data
     if (!(request->req()->getFlags() & Request::CACHE_BLOCK_ZERO) &&
         !request->req()->isCacheMaintenance() &&
-        !request->req()->isAtomic())
-        memcpy(storeQueue[store_idx].data(), data, size);
+        !request->req()->isAtomic()) {
+            // Encrypt data if the request has a CA
+            if (request->_inst->encodedPointer()) {
+                bytes_mod = request->_inst->cpu->cryptoModule.encrypt_decrypt_bytes(&cc_metadata, data_tweak, &data_key, bytes, bytes_buffer);
+                DPRINTF(LSQUnit, "Data Encryption just happened for inst [sn:%llu]\n", storeQueue[store_idx].instruction()->seqNum);
+                memcpy(storeQueue[store_idx].data(), bytes_mod.data, size);
+            } else {
+                memcpy(storeQueue[store_idx].data(), data, size);
+            }
+        }
 
     // This function only writes the data to the store queue, so no fault
     // can happen here.

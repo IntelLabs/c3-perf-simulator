@@ -340,6 +340,9 @@ class DynInst : public ExecContext, public RefCounted
     /** The effective physical address. */
     Addr physEffAddr = 0;
 
+    /** The original CA/LA address. */
+    Addr _encoded_la = 0;
+
     /** The memory request flags (from translation). */
     unsigned memReqFlags = 0;
 
