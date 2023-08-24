@@ -375,7 +375,6 @@ class Packet : public Printable
     /// A pointer to the original request.
     RequestPtr req;
 
-  private:
    /**
     * A pointer to the data being transferred. It can be different
     * sizes at each level of the hierarchy so it belongs to the
@@ -395,6 +394,7 @@ class Packet : public Printable
     /// The size of the request or transfer.
     unsigned size;
 
+   private:
     /**
      * Track the bytes found that satisfy a functional read.
      */
