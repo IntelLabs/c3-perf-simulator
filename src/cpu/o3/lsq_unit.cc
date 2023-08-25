@@ -183,7 +183,7 @@ LSQUnit::completeDataAccess(PacketPtr pkt)
             uint8_t *data_pkt = pkt->data;
             uint8_t bytes_buffer[64];
             ptr_metadata_t cc_metadata = {0};
-            uint64_t data_tweak = request->_encoded_la;
+            uint64_t data_tweak = request->_inst->_encoded_la;
             data_key_t data_key =  request->_inst->cpu->data_key_;
             cpu_bytes_t bytes{.size = (int)size_pkt, .data = data_pkt};
             cpu_bytes_t bytes_mod;
@@ -1728,7 +1728,7 @@ LSQUnit::write(LSQRequest *request, uint8_t *data, ssize_t store_idx)
     // Data Encryption (data structures)
     uint8_t bytes_buffer[64];
     ptr_metadata_t cc_metadata = {0};
-    uint64_t data_tweak = request->_encoded_la;
+    uint64_t data_tweak = request->_inst->_encoded_la;
     data_key_t data_key =  request->_inst->cpu->data_key_;
     cpu_bytes_t bytes{.size = (int)size, .data = data};
     cpu_bytes_t bytes_mod;
