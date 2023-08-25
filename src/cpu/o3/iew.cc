@@ -1437,6 +1437,8 @@ IEW::tick()
     updatedQueues = false;
 
     ldstQueue.tick();
+    // write back any loads which have returned
+    if (ldstQueue.processReadyLoads()) wroteToTimeBuffer = true;
 
     sortInsts();
 

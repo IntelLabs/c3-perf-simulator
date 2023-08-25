@@ -188,6 +188,18 @@ LSQ::tick()
 }
 
 bool
+LSQ::processReadyLoads()
+{
+    bool activity = false;
+    for (auto &unit: thread) {
+        activity = activity || unit.processReadyLoads();
+    }
+    DPRINTF(LSQ, "LSQ::processReadyLoads: Had %sactivity\n",
+        activity? "" : "no ");
+    return activity;
+}
+
+bool
 LSQ::cacheBlocked() const
 {
     return _cacheBlocked;
@@ -435,8 +447,9 @@ LSQ::recvTimingResp(PacketPtr pkt)
             thread[tid].checkSnoop(pkt);
         }
     }
+    // C3: Do the below at the end of processTimingResp
     // Update the LSQRequest state (this may delete the request)
-    request->packetReplied();
+    // request->packetReplied();
 
     if (waitingForStaleTranslation) {
         checkStaleTranslations();
@@ -858,7 +871,7 @@ LSQ::pushRequest(const DynInstPtr& inst, bool isLoad, uint8_t *data,
         DPRINTF(LSQUnit, "Set data keystream generation ready for Inst [sn:%lli]\n", inst->seqNum);
         },
         "dataKeyGen", true, Event::CPU_Tick_Pri);
-        
+
         // Schedule the event of data keystream generation.
         DPRINTF(LSQUnit, "Initialize data keystream generation for Inst [sn:%lli]\n", inst->seqNum);
         cpu->schedule(dataKeyGen, cpu->clockEdge(
@@ -1251,11 +1264,31 @@ LSQ::SplitDataRequest::markAsStaleTranslation()
 bool
 LSQ::SingleDataRequest::recvTimingResp(PacketPtr pkt)
 {
+    LSQRequest *request = dynamic_cast<LSQRequest *>(pkt->senderState);
+    DynInstPtr inst = request->instruction();
+    inst->cpu->ppDataAccessComplete->notify(std::make_pair(inst, pkt));
+    if (!isLoad()) {
+        processTimingResp(pkt);
+        cleanupIfDone();
+    } else {
+        // C3: process load responses elsewhere.
+        // mark the corresponding request as OK to process
+        flags.set(Flag::HasLoadResponse);
+        // the packet is already stored as _packets.front()
+    }
+    return true;
+}
+
+bool
+LSQ::SingleDataRequest::processTimingResp(PacketPtr pkt)
+{
     assert(_numOutstandingPackets == 1);
     flags.set(Flag::Complete);
+    flags.clear(Flag::HasLoadResponse);
     assert(pkt == _packets.front());
     _port.completeDataAccess(pkt);
     _hasStaleTranslation = false;
+    decrementOutstandingPackets();
     return true;
 }
 
@@ -1267,21 +1300,41 @@ LSQ::SplitDataRequest::recvTimingResp(PacketPtr pkt)
         pktIdx++;
     assert(pktIdx < _packets.size());
     numReceivedPackets++;
-    if (numReceivedPackets == _packets.size()) {
-        flags.set(Flag::Complete);
-        /* Assemble packets. */
-        PacketPtr resp = isLoad()
-            ? Packet::createRead(_mainReq)
-            : Packet::createWrite(_mainReq);
-        if (isLoad())
-            resp->dataStatic(_inst->memData);
-        else
-            resp->dataStatic(_data);
-        resp->senderState = this;
-        _port.completeDataAccess(resp);
-        delete resp;
+    LSQRequest *request = dynamic_cast<LSQRequest *>(pkt->senderState);
+    DynInstPtr inst = request->instruction();
+    if (!isLoad()) {
+        if (numReceivedPackets == _packets.size()) {
+            processTimingResp(pkt);
+            inst->cpu->ppDataAccessComplete->notify(std::make_pair(inst, pkt));
+        }
+        packetReplied();
+    } else {
+        if (numReceivedPackets == _packets.size()) {
+            flags.set(Flag::HasLoadResponse);
+            inst->cpu->ppDataAccessComplete->notify(std::make_pair(inst, pkt));
+        }
+        decrementOutstandingPackets();  // but no cleanup
     }
     _hasStaleTranslation = false;
+    return true;
+}
+
+bool
+LSQ::SplitDataRequest::processTimingResp(PacketPtr pkt)
+{
+    flags.set(Flag::Complete);
+    flags.clear(Flag::HasLoadResponse);
+    /* Assemble packets. */
+    PacketPtr resp = isLoad()
+        ? Packet::createRead(_mainReq)
+        : Packet::createWrite(_mainReq);
+    if (isLoad())
+        resp->dataStatic(_inst->memData);
+    else
+        resp->dataStatic(_data);
+    resp->senderState = this;
+    _port.completeDataAccess(resp);
+    delete resp;
     return true;
 }
 

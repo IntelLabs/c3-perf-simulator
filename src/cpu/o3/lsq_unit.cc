@@ -160,7 +160,9 @@ LSQUnit::completeDataAccess(PacketPtr pkt)
         }
     }
 
-    cpu->ppDataAccessComplete->notify(std::make_pair(inst, pkt));
+    //C3: Instead of doing this here (during completeDataAccess),
+    // we do it at the memory response in req::recvTimingResp.
+    //cpu->ppDataAccessComplete->notify(std::make_pair(inst, pkt));
 
     assert(!cpu->switchedOut());
     if (!inst->isSquashed()) {
@@ -780,7 +782,7 @@ LSQUnit::commitStores(InstSeqNum &youngest_inst)
                 break;
             }
 
-            // Pending data keystream generation for a CA, avoid 
+            // Pending data keystream generation for a CA, avoid
             // enabling write-back for subsequent stores.
             if (x.instruction()->encodedPointer() &&
             !x.instruction()->isDataKeyGenReady()){
@@ -1153,6 +1155,8 @@ LSQUnit::writeback(const DynInstPtr &inst, PacketPtr pkt)
 
     // Need to insert instruction into queue to commit
     iewStage->instToCommit(inst);
+    DPRINTF(LSQUnit, "Adding load sn %d PC %s to commit.\n",
+        inst->seqNum, inst->pcState());
 
     iewStage->activityThisCycle();
 
@@ -1278,6 +1282,42 @@ LSQUnit::startStaleTranslationFlush()
         if (entry.valid() && entry.hasRequest())
             entry.request()->markAsStaleTranslation();
     }
+}
+
+bool
+LSQUnit::processReadyLoads()
+{
+    bool activity = false;
+    uint32_t loadsWaitingOnResponse = 0;
+    uint32_t loadsWaitingOnKeystream = 0;
+    uint32_t loadsWaiting = 0;  // total
+    for (auto& entry : loadQueue) {
+        if (entry.valid() && entry.hasRequest()) {
+            auto req = entry.request();
+            activity = true;
+            if (req->flags.isSet(LSQRequest::Flag::HasLoadResponse) &&
+                req->instruction()->isDataKeyGenReady()) {
+                // TODO: add conditions
+                PacketPtr pkt = req->_packets.front();
+                req->processTimingResp(pkt);
+                req->cleanupIfDone();
+            } else {
+                if (!req->instruction()->isDataKeyGenReady())
+                    loadsWaitingOnKeystream++;
+                if (!req->flags.isSet(LSQRequest::Flag::HasLoadResponse))
+                    loadsWaitingOnResponse++;
+                loadsWaiting++;
+            }
+        }
+    }
+    DPRINTF(LSQUnit,
+"Loads not ready to be processed: %d / %d. \
+(%d need keystream, %d need response)\n",
+        loadsWaiting,
+        loadQueue.size(),
+        loadsWaitingOnKeystream,
+        loadsWaitingOnResponse);
+    return activity;
 }
 
 void

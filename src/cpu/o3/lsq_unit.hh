@@ -331,6 +331,8 @@ class LSQUnit
     // do C3 pointer decryption tick
     void progressPointerDecryption();
 
+    bool processReadyLoads();
+
     /** Returns if either the LQ or SQ is full. */
     bool isFull() { return lqFull() || sqFull(); }
 

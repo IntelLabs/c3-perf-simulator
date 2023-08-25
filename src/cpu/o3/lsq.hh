@@ -192,6 +192,7 @@ class LSQ
         typedef uint32_t FlagsStorage;
         typedef Flags<FlagsStorage> FlagsType;
 
+      public:
         enum Flag : FlagsStorage
         {
             IsLoad              = 0x00000001,
@@ -220,10 +221,13 @@ class LSQ
             WritebackScheduled  = 0x00001000,
             WritebackDone       = 0x00002000,
             /** True if this is an atomic request */
-            IsAtomic            = 0x00004000
+            IsAtomic            = 0x00004000,
+            /** True if this is a load and data has returned from mem. */
+            HasLoadResponse     = 0x00008000,
         };
         FlagsType flags;
 
+      protected:
         enum class State
         {
             NotIssued,
@@ -419,6 +423,7 @@ class LSQ
         }
         /** @} */
         virtual bool recvTimingResp(PacketPtr pkt) = 0;
+        virtual bool processTimingResp(PacketPtr pkt) = 0;
         virtual void sendPacketToCache() = 0;
         virtual void buildPackets() = 0;
 
@@ -524,8 +529,20 @@ class LSQ
         void
         packetReplied()
         {
+            decrementOutstandingPackets();
+            cleanupIfDone();
+        }
+
+        void
+        decrementOutstandingPackets()
+        {
             assert(_numOutstandingPackets > 0);
             _numOutstandingPackets--;
+        }
+
+        void
+        cleanupIfDone()
+        {
             if (_numOutstandingPackets == 0 && isReleased())
                 delete this;
         }
@@ -583,6 +600,7 @@ class LSQ
         virtual void finish(const Fault &fault, const RequestPtr &req,
                 gem5::ThreadContext* tc, BaseMMU::Mode mode);
         virtual bool recvTimingResp(PacketPtr pkt);
+        virtual bool processTimingResp(PacketPtr pkt);
         virtual void sendPacketToCache();
         virtual void buildPackets();
         virtual Cycles handleLocalAccess(
@@ -648,6 +666,7 @@ class LSQ
         virtual void finish(const Fault &fault, const RequestPtr &req,
                 gem5::ThreadContext* tc, BaseMMU::Mode mode);
         virtual bool recvTimingResp(PacketPtr pkt);
+        virtual bool processTimingResp(PacketPtr pkt);
         virtual void initiateTranslation();
         virtual void sendPacketToCache();
         virtual void buildPackets();
@@ -682,6 +701,9 @@ class LSQ
 
     /** Ticks the LSQ. */
     void tick();
+
+    /** Processes any received loads which are ready to writeback.*/
+    bool processReadyLoads();
 
     /** Inserts a load into the LSQ. */
     void insertLoad(const DynInstPtr &load_inst);
