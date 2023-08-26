@@ -1214,16 +1214,10 @@ LSQ::LSQRequest::sendFragmentToTranslation(int i)
     }
 
     if (this->_inst->encodedPointer()) {
-        // Save original CA to _encoded_la
-        this->_encoded_la = this->_addr;
-        // Decrypt the CA
         this->_addr = this->_inst->cpu->cryptoModule.decode_pointer(
             this->_addr);
         req(i)->_vaddr = this->_inst->cpu->cryptoModule.decode_pointer(
             req(i)->_vaddr);
-    } else {
-        // LAs don't need "_encoded_la" to be saved
-        this->_encoded_la = 0;
     }
     //*/
     numInTranslationFragments++;

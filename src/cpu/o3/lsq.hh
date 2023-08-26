@@ -256,7 +256,6 @@ class LSQ
         std::vector<Fault> _fault;
         uint64_t* _res;
         Addr _addr;
-        Addr _encoded_la;
         const uint32_t _size;
         const Request::Flags _flags;
         std::vector<bool> _byteEnable;
