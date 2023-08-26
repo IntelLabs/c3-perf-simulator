@@ -850,6 +850,7 @@ LSQ::pushRequest(const DynInstPtr& inst, bool isLoad, uint8_t *data,
         assert(request);
         request->_byteEnable = byte_enable;
         inst->setRequest();
+        inst->hasStoreCoverage = false;
         request->taskId(cpu->taskId());
 
         // There might be fault from a previous execution attempt if this is

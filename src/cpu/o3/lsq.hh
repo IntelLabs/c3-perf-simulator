@@ -978,6 +978,8 @@ class LSQ
 
     /** Number of Threads. */
     ThreadID numThreads;
+
+    friend LSQUnit;
 };
 
 } // namespace o3

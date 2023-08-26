@@ -360,6 +360,10 @@ class DynInst : public ExecContext, public RefCounted
     ssize_t sqIdx = -1;
     typename LSQUnit::SQIterator sqIt;
 
+    /** Do any SB entries cover the load? (Used during
+     * packet receipt.) */
+    bool hasStoreCoverage = false;
+
 
     /////////////////////// TLB Miss //////////////////////
     /**

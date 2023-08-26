@@ -95,7 +95,8 @@ LSQUnit::recvTimingResp(PacketPtr pkt)
     assert(request != nullptr);
     bool ret = true;
     /* Check that the request is still alive before any further action. */
-    if (!request->isReleased()) {
+    if (!request->isReleased() &&
+      !request->instruction()->hasStoreCoverage) {
         ret = request->recvTimingResp(pkt);
     }
     return ret;
@@ -1488,6 +1489,38 @@ LSQUnit::read(LSQRequest *request, ssize_t load_idx)
         return NoFault;
     }
 
+    // Access memory regardless of coverage/forwarding.
+    // We assert that in the model, the coverage check always takes less
+    // time than a mem access. Also, as written, the coverage check handles
+    // generating a new memory request. We just need recvTimingResp to
+    // ignore an incoming request if the coverage check found a match.
+    DPRINTF(LSQUnit, "Doing memory access for inst [sn:%lli] PC %s\n",
+            load_inst->seqNum, load_inst->pcState());
+
+    // Allocate memory if this is the first time a load is issued.
+    if (!load_inst->memData) {
+        load_inst->memData = new uint8_t[request->mainReq()->getSize()];
+    }
+
+
+    // hardware transactional memory
+    if (request->mainReq()->isHTMCmd()) {
+        // this is a simple sanity check
+        // the Ruby cache controller will set
+        // memData to 0x0ul if successful.
+        *load_inst->memData = (uint64_t) 0x1ull;
+    }
+
+    // For now, load throughput is constrained by the number of
+    // load FUs only, and loads do not consume a cache port (only
+    // stores do).
+    // @todo We should account for cache port contention
+    // and arbitrate between loads and stores.
+
+    // if we the cache is not blocked, do cache access
+    request->buildPackets();
+    request->sendPacketToCache();
+
     // Check the SQ for any previous stores that might lead to forwarding
     auto store_it = load_inst->sqIt;
     assert (store_it >= storeWBIt);
@@ -1653,6 +1686,9 @@ LSQUnit::read(LSQRequest *request, ssize_t load_idx)
                     stallingLoadIdx = load_idx;
                 }
 
+                // make sure the memory request which was issued doesn't commit
+                load_inst->hasStoreCoverage = true;
+
                 // Tell IQ/mem dep unit that this instruction will need to be
                 // rescheduled eventually
                 iewStage->rescheduleMemInst(load_inst);
@@ -1674,33 +1710,6 @@ LSQUnit::read(LSQRequest *request, ssize_t load_idx)
         }
     }
 
-    // If there's no forwarding case, then go access memory
-    DPRINTF(LSQUnit, "Doing memory access for inst [sn:%lli] PC %s\n",
-            load_inst->seqNum, load_inst->pcState());
-
-    // Allocate memory if this is the first time a load is issued.
-    if (!load_inst->memData) {
-        load_inst->memData = new uint8_t[request->mainReq()->getSize()];
-    }
-
-
-    // hardware transactional memory
-    if (request->mainReq()->isHTMCmd()) {
-        // this is a simple sanity check
-        // the Ruby cache controller will set
-        // memData to 0x0ul if successful.
-        *load_inst->memData = (uint64_t) 0x1ull;
-    }
-
-    // For now, load throughput is constrained by the number of
-    // load FUs only, and loads do not consume a cache port (only
-    // stores do).
-    // @todo We should account for cache port contention
-    // and arbitrate between loads and stores.
-
-    // if we the cache is not blocked, do cache access
-    request->buildPackets();
-    request->sendPacketToCache();
     if (!request->isSent())
         iewStage->blockMemInst(load_inst);
 
