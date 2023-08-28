@@ -3,9 +3,10 @@ import pytest
 import re
 
 gem5_dir = "../.."
-gem5_exec = "build/X86/gem5.opt configs/example/se.py"
+gem5_exec = "build/X86/gem5.opt --debug-flags=LSQUnit configs/example/se.py"
 icelake_config = "--cpu-type=O3_X86_icelake_1 --caches"
 safeside_dir = ""
+DATA_KEYSTREAM_GENERATION_DELAY = 4
 
 # TODO: change this once there's an se.py option
 useC3 = lambda b: "-e c3_enable.env" if b else ""
@@ -91,7 +92,7 @@ def test_ccptrenc():
     
     
 @pytest.mark.it(
-    "c3_tests/dataencdec_c3 works -- so data encryption and decryption works!"
+    "c3_tests/dataEncDec_c3 works -- so data encryption and decryption works!"
 )
 def test_dataEncDec():
     gem5_cmd = " ".join(
@@ -106,3 +107,34 @@ def test_dataEncDec():
         gem5_cmd, shell=True, cwd=gem5_dir
     ).decode("utf-8")
     assert "SUCCESS!" in gem5_output
+    
+    
+@pytest.mark.it(
+    "c3_tests/dataKeyGen_c3 works -- so data keystream generation timing is correct!"
+)
+def test_dataKeyGen():
+    gem5_cmd = " ".join(
+        [
+            gem5_exec,
+            icelake_config,
+            useC3(True),
+            "-c tests/c3_tests/dataEncDec_c3ctest",
+        ]
+    )
+    gem5_output = subprocess.check_output(
+        gem5_cmd, shell=True, cwd=gem5_dir
+    ).decode("utf-8")
+    # Define regular expressions to match the relevant lines
+    initialize_pattern = re.compile(r'\d+: system\.cpu\.iew\.lsq: Initialize data keystream generation for Inst \[sn:\d+\]')
+    complete_pattern = re.compile(r'\d+: system\.cpu\.iew\.lsq: Complete data keystream generation for Inst \[sn:\d+\]')
+    # Store the matched information
+    initialize_lines = initialize_pattern.findall(gem5_output)
+    complete_lines = complete_pattern.findall(gem5_output)
+    
+    for i in range(len(complete_lines)):
+        match = re.search(r"(\d+)", initialize_lines[i])
+        initialize_ticks = int(match.group(1))  
+        match = re.search(r"(\d+)", complete_lines[i])
+        complete_ticks = int(match.group(1))
+        assert(complete_ticks - initialize_ticks == 500 * DATA_KEYSTREAM_GENERATION_DELAY)
+    
