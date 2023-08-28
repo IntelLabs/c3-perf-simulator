@@ -88,3 +88,21 @@ def test_ccptrenc():
     # bits 57-34 should not be the same
     unique_high_bits = set([format(a, "#016b")[::-1][34:58] for a in addrs])
     assert len(addrs) == len(unique_high_bits)
+    
+    
+@pytest.mark.it(
+    "c3_tests/dataencdec_c3 works -- so data encryption and decryption works!"
+)
+def test_dataEncDec():
+    gem5_cmd = " ".join(
+        [
+            gem5_exec,
+            icelake_config,
+            useC3(True),
+            "-c tests/c3_tests/dataEncDec_c3ctest",
+        ]
+    )
+    gem5_output = subprocess.check_output(
+        gem5_cmd, shell=True, cwd=gem5_dir
+    ).decode("utf-8")
+    assert "SUCCESS!" in gem5_output
