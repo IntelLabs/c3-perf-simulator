@@ -3,7 +3,9 @@ import pytest
 import re
 
 gem5_dir = "../.."
-gem5_exec = "build/X86/gem5.opt --debug-flags=LSQUnit configs/example/se.py"
+gem5_exec = "build/X86/gem5.opt"
+debug_flags = "--debug-flags=LSQUnit"
+config_py = "configs/example/se.py"
 icelake_config = "--cpu-type=O3_X86_icelake_1 --caches"
 safeside_dir = ""
 stats_file = "../../m5out/stats.txt"
@@ -18,6 +20,7 @@ def test_hello_icelake_no_c3():
     gem5_cmd = " ".join(
         [
             gem5_exec,
+            config_py,
             icelake_config,
             useC3(False),
             "-c tests/test-progs/hello/bin/x86/linux/hello",
@@ -34,6 +37,7 @@ def test_hello_icelake_with_c3():
     gem5_cmd = " ".join(
         [
             gem5_exec,
+            config_py,
             icelake_config,
             useC3(True),
             "-c tests/test-progs/hello/bin/x86/linux/hello",
@@ -52,6 +56,7 @@ def test_spectre_pht_icelake():
     gem5_cmd = " ".join(
         [
             gem5_exec,
+            config_py,
             icelake_config,
             useC3(False),
             "-c tests/c3_tests/c3-safeside/build/demos/spectre_v1_pht_sa",
@@ -70,6 +75,7 @@ def test_ccptrenc():
     gem5_cmd = " ".join(
         [
             gem5_exec,
+            config_py,
             icelake_config,
             useC3(True),
             "-c tests/c3_tests/hello_c3ctest",
@@ -93,12 +99,13 @@ def test_ccptrenc():
     
     
 @pytest.mark.it(
-    "c3_tests/dataEncDec_c3 works -- so data encryption and decryption works!"
+    "c3_tests/dataEncDec_c3ctest works -- Data Encryption/Decryption Basic Unit Test (Includes Only CAs)."
 )
-def test_dataEncDec():
+def test_dataEncDec_Basic():
     gem5_cmd = " ".join(
         [
             gem5_exec,
+            config_py,
             icelake_config,
             useC3(True),
             "-c tests/c3_tests/dataEncDec_c3ctest",
@@ -109,14 +116,41 @@ def test_dataEncDec():
     ).decode("utf-8")
     assert "SUCCESS!" in gem5_output
     
+@pytest.mark.it(
+    "c3_tests/dataEncDec works -- Data Encryption/Decryption Advanced Unit Test (Includes Mixture of CAs and LAs)."
+)
+def test_dataEncDec_Advanced():
+    gem5_cmd = " ".join(
+        [
+            gem5_exec,
+            config_py,
+            icelake_config,
+            useC3(True),
+            "-c tests/c3_tests/dataEncDec",
+        ]
+    )
+    gem5_output = subprocess.check_output(
+        gem5_cmd, shell=True, cwd=gem5_dir
+    ).decode("utf-8")
+    assert "Read Data using LA: Hi, C3!" in gem5_output
+    assert "LA -> LA : SUCCESS" in gem5_output
+    assert "Read Data using CA: garbled data!" in gem5_output
+    assert "LA -> CA : SUCCESS" in gem5_output
+    assert "Read Data using CA: S3cr3t!" in gem5_output
+    assert "CA -> CA : SUCCESS" in gem5_output
+    assert "Read Data using LA: garbled data!" in gem5_output
+    assert "CA -> LA : SUCCESS" in gem5_output
+    
     
 @pytest.mark.it(
-    "c3_tests/dataKeyGen_c3 works -- so data keystream generation timing is correct!"
+    "c3_tests/dataKeyGen_c3 works -- Data Keystream Generation Functionality and Timing Unit Test."
 )
 def test_dataKeyGen():
     gem5_cmd = " ".join(
         [
             gem5_exec,
+            debug_flags,
+            config_py,
             icelake_config,
             useC3(True),
             "-c tests/c3_tests/dataEncDec_c3ctest",

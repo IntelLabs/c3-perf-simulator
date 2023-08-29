@@ -21,6 +21,17 @@ c3_glibc:
 		$< \
 		-o $@
 
+dataEncDec:
+	g++ -O1\
+		-L ${GLIBC}/lib \
+		-I ${GLIBC}/include \
+		-I ../../c3-simulator \
+		-Wl,--rpath=${GLIBC}/lib \
+		-Wl,--dynamic-linker=${GLIBC}/lib/ld-linux-x86-64.so.2 \
+		-c dataEncDec.c \
+		-o dataEncDec.o;
+	g++ dataEncDec.o ${GEM5_REPO}/build/X86/crypto/bipbip.o -o dataEncDec
+
 ../../build/X86/gem5.opt:
 	cd ../..; \
 	scons build/X86/gem5.opt -j$$((`nproc`+1))
