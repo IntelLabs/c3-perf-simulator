@@ -276,6 +276,8 @@ LSQUnit::LSQUnitStats::LSQUnitStats(statistics::Group *parent)
                "Number of loads that had data forwarded from stores"),
       ADD_STAT(squashedLoads, statistics::units::Count::get(),
                "Number of loads squashed"),
+      ADD_STAT(squashedLoadsCA, statistics::units::Count::get(),
+               "Number of CA loads squashed"),
       ADD_STAT(ignoredResponses, statistics::units::Count::get(),
                "Number of memory responses ignored because the instruction is "
                "squashed"),
@@ -283,8 +285,12 @@ LSQUnit::LSQUnitStats::LSQUnitStats(statistics::Group *parent)
                "Number of memory ordering violations"),
       ADD_STAT(squashedStores, statistics::units::Count::get(),
                "Number of stores squashed"),
+      ADD_STAT(squashedStoresCA, statistics::units::Count::get(),
+               "Number of CA stores squashed"),
       ADD_STAT(rescheduledLoads, statistics::units::Count::get(),
                "Number of loads that were rescheduled"),
+      ADD_STAT(rescheduledLoadsCA, statistics::units::Count::get(),
+               "Number of CA loads that were rescheduled"),
       ADD_STAT(blockedByCache, statistics::units::Count::get(),
                "Number of times an access to memory failed due to the cache "
                "being blocked"),
@@ -983,12 +989,15 @@ LSQUnit::squash(const InstSeqNum &squashed_num)
             DPRINTF(HtmCpu, ">> htmStarts (%d) : htmStops-- (%d)\n",
               htmStarts, htmStops);
         }
+        ++stats.squashedLoads;
+        if (loadQueue.back().instruction()->encodedPointer()) {
+            ++stats.squashedLoadsCA;
+        }
         // Clear the smart pointer to make sure it is decremented.
         loadQueue.back().instruction()->setSquashed();
         loadQueue.back().clear();
 
         loadQueue.pop_back();
-        ++stats.squashedLoads;
     }
 
     // hardware transactional memory
@@ -1053,13 +1062,16 @@ LSQUnit::squash(const InstSeqNum &squashed_num)
         // Clear the smart pointer to make sure it is decremented.
         storeQueue.back().instruction()->setSquashed();
 
+        ++stats.squashedStores;
+        if (storeQueue.back().instruction()->encodedPointer()) {
+            ++stats.squashedStoresCA;
+        }
         // Must delete request now that it wasn't handed off to
         // memory.  This is quite ugly.  @todo: Figure out the proper
         // place to really handle request deletes.
         storeQueue.back().clear();
 
         storeQueue.pop_back();
-        ++stats.squashedStores;
     }
 }
 
@@ -1444,6 +1456,9 @@ LSQUnit::read(LSQRequest *request, ssize_t load_idx)
         load_inst->clearIssued();
         load_inst->effAddrValid(false);
         ++stats.rescheduledLoads;
+        if (load_inst->encodedPointer()) {
+            ++stats.rescheduledLoadsCA;
+        }
         DPRINTF(LSQUnit, "Strictly ordered load [sn:%lli] PC %s\n",
                 load_inst->seqNum, load_inst->pcState());
 
@@ -1695,6 +1710,9 @@ LSQUnit::read(LSQRequest *request, ssize_t load_idx)
                 load_inst->clearIssued();
                 load_inst->effAddrValid(false);
                 ++stats.rescheduledLoads;
+                if (load_inst->encodedPointer()) {
+                    ++stats.rescheduledLoadsCA;
+                }
 
                 // Do not generate a writeback event as this instruction is not
                 // complete.

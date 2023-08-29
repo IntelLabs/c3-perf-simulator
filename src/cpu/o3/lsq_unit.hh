@@ -532,6 +532,9 @@ class LSQUnit
         /** Total number of squashed loads. */
         statistics::Scalar squashedLoads;
 
+        /** Total number of squashed CA loads. */
+        statistics::Scalar squashedLoadsCA;
+
         /** Total number of responses from the memory system that are
          * ignored due to the instruction already being squashed. */
         statistics::Scalar ignoredResponses;
@@ -542,8 +545,14 @@ class LSQUnit
         /** Total number of squashed stores. */
         statistics::Scalar squashedStores;
 
+        /** Total number of squashed CA stores. */
+        statistics::Scalar squashedStoresCA;
+
         /** Number of loads that were rescheduled. */
         statistics::Scalar rescheduledLoads;
+
+        /** Number of CA loads that were rescheduled. */
+        statistics::Scalar rescheduledLoadsCA;
 
         /** Number of times the LSQ is blocked due to the cache. */
         statistics::Scalar blockedByCache;
