@@ -6,6 +6,7 @@ gem5_dir = "../.."
 gem5_exec = "build/X86/gem5.opt --debug-flags=LSQUnit configs/example/se.py"
 icelake_config = "--cpu-type=O3_X86_icelake_1 --caches"
 safeside_dir = ""
+stats_file = "../../m5out/stats.txt"
 DATA_KEYSTREAM_GENERATION_DELAY = 4
 
 # TODO: change this once there's an se.py option
@@ -124,13 +125,32 @@ def test_dataKeyGen():
     gem5_output = subprocess.check_output(
         gem5_cmd, shell=True, cwd=gem5_dir
     ).decode("utf-8")
-    # Define regular expressions to match the relevant lines
+    
     initialize_pattern = re.compile(r'\d+: system\.cpu\.iew\.lsq: Initialize data keystream generation for Inst \[sn:\d+\]')
     complete_pattern = re.compile(r'\d+: system\.cpu\.iew\.lsq: Complete data keystream generation for Inst \[sn:\d+\]')
-    # Store the matched information
     initialize_lines = initialize_pattern.findall(gem5_output)
     complete_lines = complete_pattern.findall(gem5_output)
     
+    # Assertion 1: Assert the number of issued data keystream generation events
+    with open(stats_file, 'r') as sf:
+        lines = sf.readlines()
+        for line in lines:
+            parts = line.strip().split()
+            if line.startswith("system.cpu.lsq0.rescheduledLoadsCA"):
+                rescheduledLoadsCA = int(parts[1])
+            if line.startswith("system.cpu.lsq0.squashedLoadsCA"):
+                squashedLoadsCA = int(parts[1])
+            if line.startswith("system.cpu.lsq0.squashedStoresCA "):
+                squashedStoresCA = int(parts[1])
+            if line.startswith("system.cpu.commit.cryptoAddrCommittedInsts "):
+                cryptoAddrCommittedInsts = int(parts[1])
+        expected_dataKeyGenIssue = cryptoAddrCommittedInsts + squashedStoresCA + squashedLoadsCA + rescheduledLoadsCA
+        assert(expected_dataKeyGenIssue == len(initialize_lines))
+    
+    # Assertion 2: Assert every initialized data keystream should have a matching completion
+    assert(len(initialize_lines) == len(complete_lines))
+    
+    # Assertion 3: Assert data keystream generation latency
     for i in range(len(complete_lines)):
         match = re.search(r"(\d+)", initialize_lines[i])
         initialize_ticks = int(match.group(1))  
