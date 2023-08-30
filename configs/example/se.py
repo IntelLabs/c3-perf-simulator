@@ -252,6 +252,12 @@ for i in range(np):
         )
         system.cpu[i].branchPred.indirectBranchPred = indirectBPClass()
 
+    if args.pointer_decryption_delay:
+        system.cpu[i].pointer_decryption_delay = args.pointer_decryption_delay
+
+    if args.data_keystream_delay:
+        system.cpu[i].data_keystream_delay = args.data_keystream_delay
+
     system.cpu[i].createThreads()
 
 if args.ruby:

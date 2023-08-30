@@ -709,6 +709,19 @@ def addSEOptions(parser):
     parser.add_argument(
         "--errout", default="", help="Redirect stderr to a file."
     )
+    # C3: add pointer dec time and data keystream time
+    parser.add_argument(
+        "--pointer-decryption-delay",
+        type=int,
+        default=3,
+        help="Number of cycles to decrypt a cryptographic " "address.",
+    )
+    parser.add_argument(
+        "--data-keystream-delay",
+        type=int,
+        default=4,
+        help="Number of cycles to generate the data " "keystream for a CA.",
+    )
     parser.add_argument(
         "--chroot",
         action="store",

@@ -113,6 +113,8 @@ CPU::CPU(const BaseO3CPUParams &params)
       globalSeqNum(1),
       system(params.system),
       lastRunningCycle(curCycle()),
+      pointerDecryptionDelay(params.pointer_decryption_delay),
+      dataKeystreamDelay(params.data_keystream_delay),
       cpuStats(this)
 {
     cryptoModule = CCPointerEncoding();

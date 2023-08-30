@@ -797,9 +797,8 @@ LSQ::dumpInsts(ThreadID tid) const
     thread.at(tid).dumpInsts();
 }
 
-// TODO make this a runtime argument
-#define PTR_DECRYPTION_DELAY 3
-#define DATA_KEYSTREAM_GENERATION_DELAY 4
+#define PTR_DECRYPTION_DELAY _inst->cpu->pointerDecryptionDelay
+#define DATA_KEYSTREAM_GENERATION_DELAY cpu->dataKeystreamDelay
 
 Fault
 LSQ::pushRequest(const DynInstPtr& inst, bool isLoad, uint8_t *data,
@@ -870,6 +869,7 @@ LSQ::pushRequest(const DynInstPtr& inst, bool isLoad, uint8_t *data,
         EventFunctionWrapper *dataKeyGen = new EventFunctionWrapper(
         [this, inst]{ inst->isDataKeyGenReady(true);
         DPRINTF(LSQUnit, "Complete data keystream generation for Inst [sn:%lli]\n", inst->seqNum);
+        cpu->wakeCPU();
         },
         "dataKeyGen", true, Event::CPU_Tick_Pri);
 

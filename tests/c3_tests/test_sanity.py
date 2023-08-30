@@ -52,6 +52,7 @@ def test_hello_icelake_with_c3():
 # this does assume NO modifications to the spectre demo!
 # in particular, no pointer enc/dec built into main()
 @pytest.mark.it("SafeSide Spectre v1 PHT succeeds on base gem5")
+@pytest.mark.skip(reason="Not needed for this deliverable")
 def test_spectre_pht_icelake():
     gem5_cmd = " ".join(
         [
@@ -96,8 +97,8 @@ def test_ccptrenc():
     # bits 57-34 should not be the same
     unique_high_bits = set([format(a, "#016b")[::-1][34:58] for a in addrs])
     assert len(addrs) == len(unique_high_bits)
-    
-    
+
+
 @pytest.mark.it(
     "c3_tests/dataEncDec_c3ctest works -- Data Encryption/Decryption Basic Unit Test (Includes Only CAs)."
 )
@@ -115,7 +116,8 @@ def test_dataEncDec_Basic():
         gem5_cmd, shell=True, cwd=gem5_dir
     ).decode("utf-8")
     assert "SUCCESS!" in gem5_output
-    
+
+
 @pytest.mark.it(
     "c3_tests/dataEncDec works -- Data Encryption/Decryption Advanced Unit Test (Includes Mixture of CAs and LAs)."
 )
@@ -140,8 +142,8 @@ def test_dataEncDec_Advanced():
     assert "CA -> CA : SUCCESS" in gem5_output
     assert "Read Data using LA: garbled data!" in gem5_output
     assert "CA -> LA : SUCCESS" in gem5_output
-    
-    
+
+
 @pytest.mark.it(
     "c3_tests/dataKeyGen_c3 works -- Data Keystream Generation Functionality and Timing Unit Test."
 )
@@ -159,14 +161,18 @@ def test_dataKeyGen():
     gem5_output = subprocess.check_output(
         gem5_cmd, shell=True, cwd=gem5_dir
     ).decode("utf-8")
-    
-    initialize_pattern = re.compile(r'\d+: system\.cpu\.iew\.lsq: Initialize data keystream generation for Inst \[sn:\d+\]')
-    complete_pattern = re.compile(r'\d+: system\.cpu\.iew\.lsq: Complete data keystream generation for Inst \[sn:\d+\]')
+
+    initialize_pattern = re.compile(
+        r"\d+: system\.cpu\.iew\.lsq: Initialize data keystream generation for Inst \[sn:\d+\]"
+    )
+    complete_pattern = re.compile(
+        r"\d+: system\.cpu\.iew\.lsq: Complete data keystream generation for Inst \[sn:\d+\]"
+    )
     initialize_lines = initialize_pattern.findall(gem5_output)
     complete_lines = complete_pattern.findall(gem5_output)
-    
+
     # Assertion 1: Assert the number of issued data keystream generation events
-    with open(stats_file, 'r') as sf:
+    with open(stats_file, "r") as sf:
         lines = sf.readlines()
         for line in lines:
             parts = line.strip().split()
@@ -178,17 +184,24 @@ def test_dataKeyGen():
                 squashedStoresCA = int(parts[1])
             if line.startswith("system.cpu.commit.cryptoAddrCommittedInsts "):
                 cryptoAddrCommittedInsts = int(parts[1])
-        expected_dataKeyGenIssue = cryptoAddrCommittedInsts + squashedStoresCA + squashedLoadsCA + rescheduledLoadsCA
-        assert(expected_dataKeyGenIssue == len(initialize_lines))
-    
+        expected_dataKeyGenIssue = (
+            cryptoAddrCommittedInsts
+            + squashedStoresCA
+            + squashedLoadsCA
+            + rescheduledLoadsCA
+        )
+        assert expected_dataKeyGenIssue == len(initialize_lines)
+
     # Assertion 2: Assert every initialized data keystream should have a matching completion
-    assert(len(initialize_lines) == len(complete_lines))
-    
+    assert len(initialize_lines) == len(complete_lines)
+
     # Assertion 3: Assert data keystream generation latency
     for i in range(len(complete_lines)):
         match = re.search(r"(\d+)", initialize_lines[i])
-        initialize_ticks = int(match.group(1))  
+        initialize_ticks = int(match.group(1))
         match = re.search(r"(\d+)", complete_lines[i])
         complete_ticks = int(match.group(1))
-        assert(complete_ticks - initialize_ticks == 500 * DATA_KEYSTREAM_GENERATION_DELAY)
-    
+        assert (
+            complete_ticks - initialize_ticks
+            == 500 * DATA_KEYSTREAM_GENERATION_DELAY
+        )

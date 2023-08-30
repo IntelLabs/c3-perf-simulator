@@ -542,6 +542,10 @@ class CPU : public BaseCPU
     /** The cycle that the CPU was last running, used for statistics. */
     Cycles lastRunningCycle;
 
+    uint32_t pointerDecryptionDelay;
+
+    uint32_t dataKeystreamDelay;
+
     /** The cycle that the CPU was last activated by a new thread*/
     Tick lastActivatedCycle;
 

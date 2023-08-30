@@ -1,6 +1,6 @@
 SHELL := /bin/bash
 
-build: ../../build/X86/gem5.opt #c3_glibc
+build: ../../build/X86/gem5.opt c3_glibc
 
 # NOTE: If this repository is not cloned with --recursive-submodules,
 # much of this will not work!
@@ -36,7 +36,7 @@ dataEncDec:
 	cd ../..; \
 	scons build/X86/gem5.opt -j$$((`nproc`+1))
 
-test: build hello_c3
+test: build hello_c3ctest dataEncDec dataEncDec_c3ctest
 	pytest .
 
 .PHONY: ../../build/X86/gem5.opt
