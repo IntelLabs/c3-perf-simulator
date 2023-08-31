@@ -426,9 +426,11 @@ class Commit
     /** The sequence number of the youngest valid instruction in the ROB. */
     InstSeqNum youngestSeqNum[MaxThreads];
 
+  public:
     /** The sequence number of the last commited instruction. */
     InstSeqNum lastCommitedSeqNum[MaxThreads];
 
+  private:
     /** Records if there is a trap currently in flight. */
     bool trapInFlight[MaxThreads];
 

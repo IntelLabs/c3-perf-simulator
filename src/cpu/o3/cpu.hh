@@ -417,9 +417,11 @@ class CPU : public BaseCPU
     /** The issue/execute/writeback stages. */
     IEW iew;
 
+  public:
     /** The commit stage. */
     Commit commit;
 
+  protected:
     /** The register file. */
     PhysRegFile regFile;
 

@@ -95,9 +95,11 @@ LSQUnit::recvTimingResp(PacketPtr pkt)
     assert(request != nullptr);
     bool ret = true;
     /* Check that the request is still alive before any further action. */
-    if (!request->isReleased() &&
-      !request->instruction()->hasStoreCoverage) {
+    if (!request->isReleased()) {
         ret = request->recvTimingResp(pkt);
+    } else {
+        DPRINTF(LSQUnit, "Request already released; ignoring. [inst sn: %d]\n",
+            request->instruction()->seqNum);
     }
     return ret;
 }
@@ -1301,6 +1303,7 @@ bool
 LSQUnit::processReadyLoads()
 {
     bool activity = false;
+    uint32_t loadsNotSent = 0;
     uint32_t loadsWaitingOnResponse = 0;
     uint32_t loadsWaitingOnKeystream = 0;
     uint32_t loadsWaiting = 0;  // total
@@ -1312,9 +1315,15 @@ LSQUnit::processReadyLoads()
                 req->instruction()->isDataKeyGenReady()) {
                 // TODO: add conditions
                 PacketPtr pkt = req->_packets.front();
+                DPRINTF(LSQUnit, "Processing packet from LQ [inst sn: %d]\n",
+                    req->instruction()->seqNum);
                 req->processTimingResp(pkt);
                 req->cleanupIfDone();
             } else {
+                DPRINTF(LSQUnit, "Found not-ready LQ entry [inst sn: %d]\n",
+                    req->instruction()->seqNum);
+                if (!req->isSent())
+                    loadsNotSent++;
                 if (!req->instruction()->isDataKeyGenReady())
                     loadsWaitingOnKeystream++;
                 if (!req->flags.isSet(LSQRequest::Flag::HasLoadResponse))
@@ -1325,11 +1334,12 @@ LSQUnit::processReadyLoads()
     }
     DPRINTF(LSQUnit,
 "Loads not ready to be processed: %d / %d. \
-(%d need keystream, %d need response)\n",
+(%d need keystream, %d need response, %d not sent)\n",
         loadsWaiting,
         loadQueue.size(),
         loadsWaitingOnKeystream,
-        loadsWaitingOnResponse);
+        loadsWaitingOnResponse,
+        loadsNotSent);
     return activity;
 }
 
@@ -1361,8 +1371,9 @@ LSQUnit::LSQEntry::progressPointerDecryption()
 void
 LSQUnit::progressPointerDecryption()
 {
-    // TODO: this logic will not work if any instruction can live in
+    // CHECK: this logic will break if any instruction can live in
     // both the load queue and the store queue at once!
+
     for (auto& entry : loadQueue) {
         entry.progressPointerDecryption();
     }

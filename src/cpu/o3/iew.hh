@@ -302,9 +302,11 @@ class IEW
     /** Wire to write information heading to previous stages. */
     TimeBuffer<TimeStruct>::wire toFetch;
 
+  public:
     /** Wire to get commit's output from backwards time buffer. */
     TimeBuffer<TimeStruct>::wire fromCommit;
 
+  private:
     /** Wire to write information heading to previous stages. */
     TimeBuffer<TimeStruct>::wire toRename;
 

@@ -331,10 +331,6 @@ TLB::translate(const RequestPtr &req,
 
     delayedResponse = false;
 
-    // TODO: Select is_predictive based on args.
-    // PREDTLB: bool is_predictive =
-    // (req->_pointerDecryptionTimer != 0);
-    // (and there are some more conditions based on reissues... TODO)
 
     bool is_predictive = false;
 
@@ -432,6 +428,9 @@ TLB::translate(const RequestPtr &req,
 
             TlbEntry* pred_entry = lookup(pageAlignedVaddr, false, true);
             TlbEntry* entry = lookup(pageAlignedVaddr, true, is_predictive);
+
+            // sanity check: make sure the req has finished ptr decryption
+            assert(req->isDoneDecryptingPointer());
 
             if (entry && !is_predictive) {
                 // assumption: one entry (ptr) per page-aligned vaddr.

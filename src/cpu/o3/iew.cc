@@ -1497,16 +1497,25 @@ IEW::tick()
         DPRINTF(IEW,"Processing [tid:%i]\n",tid);
 
         // Update structures based on instructions committed.
-        if (fromCommit->commitInfo[tid].doneSeqNum != 0 &&
+
+        DPRINTF(IEW,
+        "doneSeqNum: %d lastCommitedSeqNum: %d squash: %d robSquashing: %d\n",
+            fromCommit->commitInfo[tid].doneSeqNum,
+            cpu->commit.lastCommitedSeqNum[tid],
+            (uint32_t) fromCommit->commitInfo[tid].squash,
+            (uint32_t) fromCommit->commitInfo[tid].robSquashing);
+
+        //if (fromCommit->commitInfo[tid].doneSeqNum != 0 &&
+        if (cpu->commit.lastCommitedSeqNum[tid] != 0 &&
             !fromCommit->commitInfo[tid].squash &&
             !fromCommit->commitInfo[tid].robSquashing) {
 
-            ldstQueue.commitStores(fromCommit->commitInfo[tid].doneSeqNum,tid);
+            ldstQueue.commitStores(cpu->commit.lastCommitedSeqNum[tid],tid);
 
-            ldstQueue.commitLoads(fromCommit->commitInfo[tid].doneSeqNum,tid);
+            ldstQueue.commitLoads(cpu->commit.lastCommitedSeqNum[tid],tid);
 
             updateLSQNextCycle = true;
-            instQueue.commit(fromCommit->commitInfo[tid].doneSeqNum,tid);
+            instQueue.commit(cpu->commit.lastCommitedSeqNum[tid],tid);
         }
 
         if (fromCommit->commitInfo[tid].nonSpecSeqNum != 0) {

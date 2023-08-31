@@ -496,7 +496,7 @@ class Request
 
     bool _isCrypto;
 
-    uint8_t _pointerDecryptionTimer;
+    uint8_t _pointerDecryptionTimer = 0;
 
     void setPointerDecryptionTimer(uint8_t cycles) {
         _isCrypto = !!cycles;

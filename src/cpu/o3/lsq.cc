@@ -426,6 +426,9 @@ LSQ::recvTimingResp(PacketPtr pkt)
     LSQRequest *request = dynamic_cast<LSQRequest*>(pkt->senderState);
     panic_if(!request, "Got packet back with unknown sender state\n");
 
+    DPRINTF(LSQ, "Got packet back [inst sn: %d]\n",
+                request->instruction()->seqNum);
+
     thread[cpu->contextToThread(request->contextId())].recvTimingResp(pkt);
 
     if (pkt->isInvalidate()) {
@@ -829,7 +832,7 @@ LSQ::pushRequest(const DynInstPtr& inst, bool isLoad, uint8_t *data,
     if (inst->translationStarted()) {
         request = inst->savedRequest;
         assert(request);
-        if (!(inst->translationCompleted())) {
+        if (inst->encodedPointer()) {
             for (int i = 0; i < request->_reqs.size(); i++) {
                 request->sendFragmentToTranslation(i);
             }
@@ -867,16 +870,26 @@ LSQ::pushRequest(const DynInstPtr& inst, bool isLoad, uint8_t *data,
 
         // Event function wrapper for data keystream generation unit.
         EventFunctionWrapper *dataKeyGen = new EventFunctionWrapper(
-        [this, inst]{ inst->isDataKeyGenReady(true);
-        DPRINTF(LSQUnit, "Complete data keystream generation for Inst [sn:%lli]\n", inst->seqNum);
-        cpu->wakeCPU();
+        [this, inst]{
+            inst->isDataKeyGenReady(true);
+            DPRINTF(LSQUnit,
+        "Complete data keystream generation for Inst [sn:%lli]\n",
+        inst->seqNum);
+            if (!inst->isSquashed()) {
+                cpu->wakeCPU();
+            } else {
+                DPRINTF(LSQUnit, "But that inst was squashed.\n");
+            }
         },
         "dataKeyGen", true, Event::CPU_Tick_Pri);
 
         // Schedule the event of data keystream generation.
         if (inst->encodedPointer()){
-            DPRINTF(LSQUnit, "Initialize data keystream generation for Inst [sn:%lli]\n", inst->seqNum);
-            cpu->schedule(dataKeyGen, cpu->clockEdge(Cycles(DATA_KEYSTREAM_GENERATION_DELAY)));
+            DPRINTF(LSQUnit,
+        "Initialize data keystream generation for Inst [sn:%lli]\n",
+        inst->seqNum);
+            cpu->schedule(dataKeyGen, cpu->clockEdge(
+                Cycles(DATA_KEYSTREAM_GENERATION_DELAY)));
         }
 
         request->initiateTranslation();
@@ -1048,6 +1061,10 @@ LSQ::SplitDataRequest::initiateTranslation()
                 _size, _flags, _inst->requestorId(),
                 _inst->pcState().instAddr(), _inst->contextId());
     _mainReq->setByteEnable(_byteEnable);
+
+     // How long will this request take to do pointer decryption?
+    bool is_crypto = _inst->encodedPointer();
+    _mainReq->setPointerDecryptionTimer(is_crypto? PTR_DECRYPTION_DELAY : 0);
 
     // Paddr is not used in _mainReq. However, we will accumulate the flags
     // from the sub requests into _mainReq by calling setFlags() in finish().
