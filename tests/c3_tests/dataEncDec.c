@@ -77,7 +77,7 @@ int main() {
     data_enc[7] = (char) 0;
     printf("%s\n", data_enc);
 
-    printf("Read Data using CA: %s\n", data_enc);
+    printf("Read Data using CA with the same metadata: %s\n", data_enc);
     if (0 != strcmp(data_enc, comparing_data_ca)) {
         printf("CA -> CA : FAILED\n");
     } else {
@@ -90,6 +90,24 @@ int main() {
         printf("CA -> LA : SUCCESS\n");
     } else {
         printf("CA -> LA : FAILED\n");
+    }
+
+    ptr_metadata_t data_metadata_2 = { 0 };
+    data_metadata_2.size_ = 0b000110;  // 32 B allocation
+    char* data_enc2 = (char*) enc.encode_pointer((uint64_t) data, &data_metadata_2);
+    char* data_dec2 = (char*) enc.decode_pointer((uint64_t) data_enc2);
+    printf("\n");
+    printf("Original Address of data (LA) = %016lx\n", (uint64_t) data);
+    printf("Encrypted Address of data (CA) = %016lx\n", (uint64_t) data_enc2);
+    printf("Decrypted Address of data (LA) = %016lx\n", (uint64_t) data_dec2);
+    printf("\n");
+
+    printf("Read Data using CA with the different metadata: ");
+    if (0 != strncmp(data_enc2, comparing_data_ca, 8)) {
+        printf("garbled data!\n");
+        printf("CA1 -> CA2 : SUCCESS\n");
+    } else {
+        printf("CA1 -> CA2 : FAILED\n");
     }
     
     return 0;

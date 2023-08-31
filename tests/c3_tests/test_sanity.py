@@ -134,14 +134,18 @@ def test_dataEncDec_Advanced():
     gem5_output = subprocess.check_output(
         gem5_cmd, shell=True, cwd=gem5_dir
     ).decode("utf-8")
+    assert "Write Data using LA: Hi, C3!" in gem5_output
     assert "Read Data using LA: Hi, C3!" in gem5_output
     assert "LA -> LA : SUCCESS" in gem5_output
     assert "Read Data using CA: garbled data!" in gem5_output
     assert "LA -> CA : SUCCESS" in gem5_output
-    assert "Read Data using CA: S3cr3t!" in gem5_output
+    assert "Write Data using CA: S3cr3t!" in gem5_output
+    assert "Read Data using CA with the same metadata: S3cr3t!" in gem5_output
     assert "CA -> CA : SUCCESS" in gem5_output
     assert "Read Data using LA: garbled data!" in gem5_output
     assert "CA -> LA : SUCCESS" in gem5_output
+    assert "Read Data using CA with the different metadata: garbled data!" in gem5_output
+    assert "CA1 -> CA2 : SUCCESS" in gem5_output
 
 
 @pytest.mark.it(

@@ -39,4 +39,10 @@ dataEncDec:
 test: build hello_c3ctest dataEncDec dataEncDec_c3ctest
 	pytest .
 
+clean:
+	rm -f dataEncDec \
+	rm -f dataEncDec.o \
+	rm -f dataEncDec_c3ctest \
+	rm -f hello_c3ctest
+
 .PHONY: ../../build/X86/gem5.opt
