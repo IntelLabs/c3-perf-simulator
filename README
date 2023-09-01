@@ -1,7 +1,15 @@
 This is an experimental performance simulator for Cryptographic Capability Computing (C3).
 
-Make sure to clone this repository with --recursive-submodules - otherwise,
-many tests will not build.
+If not copying ZIPs of other deliverables, make sure to clone this repository with --recursive-submodules - otherwise, many tests will not build.
+
+Otherwise, when assembling the simulator from downloaded ZIP files, do the following:
+
+1. Unzip `harden-p1-d1-c3-simulator.zip` and copy its root directory's contents to `c3-simulator/` in this directory.
+2. Follow the instructions in `c3-simulator/README.adoc` to assemble additional subdirectories.
+3. In `c3-simulator/malloc/cc_globals.h`, comment out lines 23-25 (a block of three defines including CC_INTEGRITY_ENABLE).
+4. Copy ascon_* and bipbip* from c3-simulator/crypto to src/crypto (i.e., the gem5 src directory).
+
+To build everything and run tests, cd into tests/c3_tests and run `make test`.
 
 ---
 
