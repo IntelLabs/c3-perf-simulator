@@ -1,7 +1,4 @@
-The simulator in this repository is a work in progress. The end goal is a more
-realistic model of C3's performance than Simics provides -- particularly with
-respect to microarchitecture -- which is not informed by any Intel
-confidential microarchitectural details.
+This is an experimental performance simulator for Cryptographic Capability Computing (C3).
 
 Make sure to clone this repository with --recursive-submodules - otherwise,
 many tests will not build.
