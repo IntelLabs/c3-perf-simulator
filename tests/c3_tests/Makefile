@@ -21,20 +21,6 @@ c3_glibc:
 		$< \
 		-o $@
 
-prep_bf_c:
-	grep -qxF '#include <stdlib.h>' mibench/security/blowfish/bf.c || sed -i '1s/^/#include <stdlib.h>\n/' mibench/security/blowfish/bf.c
-
-prep_bf_makefile:
-	sed -i '/-static/s///' mibench/security/blowfish/Makefile
-
-mibench/security/blowfish/bf: prep_bf_c prep_bf_makefile
-	cd mibench/security/blowfish; \
-	make; \
-	patchelf --set-interpreter ${GLIBC}/lib/ld-linux-x86-64.so.2 \
-		--set-rpath ${GLIBC}/lib \
-		bf; \
-
-
 dataEncDec:
 	g++ -O1\
 		-L ${GLIBC}/lib \
@@ -50,7 +36,7 @@ dataEncDec:
 	cd ../..; \
 	scons build/X86/gem5.opt -j$$((`nproc`+1))
 
-test: build hello_c3ctest dataEncDec dataEncDec_c3ctest mibench/security/blowfish/bf
+test: build hello_c3ctest dataEncDec dataEncDec_c3ctest
 	pytest .
 
 clean:
@@ -59,4 +45,4 @@ clean:
 	rm -f dataEncDec_c3ctest \
 	rm -f hello_c3ctest
 
-.PHONY: ../../build/X86/gem5.opt prep_bf_c prep_bf_makefile
+.PHONY: ../../build/X86/gem5.opt
