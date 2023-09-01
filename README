@@ -1,6 +1,6 @@
 This is an experimental performance simulator for Cryptographic Capability Computing (C3).
 
-If not copying ZIPs of other deliverables, make sure to clone this repository with --recursive-submodules - otherwise, many tests will not build.
+If not copying ZIPs of other deliverables, make sure to clone this repository with --recurse-submodules - otherwise, many tests will not build.
 
 Otherwise, when assembling the simulator from downloaded ZIP files, do the following:
 
