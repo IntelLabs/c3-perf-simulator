@@ -18,6 +18,10 @@ Build the gem5 simulator and custom glibc. Then, still from within tests/c3_test
 
 In particular, this demo shows what happens to a Spectre attack if public data and private data have overlapping allocations: only garbled secret data is retrieved.
 
+### Testing C3 against SLH
+
+To run a benchmark using Speculative Load Hardening (SLH), compile it using clang with the flag `-mspeculative-load-hardening`. To explicitly disable SLH, compile the benchmark with `-mno-speculative-load-hardening`.
+
 ---
 
 The contents of this repository and linked repositories are solely for research
