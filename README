@@ -11,6 +11,13 @@ Otherwise, when assembling the simulator from downloaded ZIP files, do the follo
 
 To build everything and run tests, cd into tests/c3_tests and run `make test`.
 
+### Spectre v1 demo build instructions
+
+Make sure that harden-p1-d1-c3-simulator.zip is in the root directory of this repo.
+Build the gem5 simulator and custom glibc. Then, still from within tests/c3_tests, run `spectre_build_and_run.sh`. This will both build and run the Safeside demo which has been modified to use C3.
+
+In particular, this demo shows what happens to a Spectre attack if public data and private data have overlapping allocations: only garbled secret data is retrieved.
+
 ---
 
 The contents of this repository and linked repositories are solely for research
