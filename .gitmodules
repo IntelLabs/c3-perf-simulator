@@ -4,3 +4,6 @@
 [submodule "tests/c3_tests/mibench"]
 	path = tests/c3_tests/mibench
 	url = https://github.com/embecosm/mibench.git
+[submodule "embench-iot"]
+	path = embench-iot
+	url = ./embench-iot/
