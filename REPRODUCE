@@ -1,0 +1,75 @@
+1. If you haven't already, clone this repo into your home directory:
+	> cd ~
+	> git clone https://github.com/intellabs/c3-perf-simulator -b perf-repro-sep29 --recurse-submodules
+	> cd c3-perf-simulator
+
+2. Build GLIBC:
+	> cd tests/c3_tests
+	> make c3_glibc
+		If this fails due to something about "struct __jmp_buf_tag *", you're using the wrong system gcc -- make sure to use gcc-9.
+		If it fails afterward being unable to find lstdc++, make sure you are on Ubuntu 20.04.
+		Otherwise, the last thing printed should contain "DONE BUILDING GLIBC".
+
+3. Build gem5:
+	> cd ../..
+	> scons build/X86/gem5.opt -j33
+		If you're asked to install pre-commit hooks, hit enter to continue.
+		If it subsequently can't find 'pre-commit', hit y then enter to continue compilation.
+		If the build errors out, make sure you have all dependencies for gem5: https://www.gem5.org/documentation/general_docs/building
+		Otherwise, the last thing built should be build/X86/gem5.opt. Some warnings might be shown afterward; these can be ignored.
+	> cd -
+
+4. Build Blowfish without SLH:
+	> make mibench/security/blowfish/bf
+   Try to run Blowfish. 
+	> mibench/security/blowfish/bf
+   		If it prints out "Usage: blowfish {e|d} <intput> <output> key", also try to run it with CC_ENABLED=1:
+	> CC_ENABLED=1 mibench/security/blowfish/bf
+   		If this prints out "Illegal instruction", C3-glibc is linked with the binary.
+
+5. Gather data for Blowfish (no SLH) in gem5:
+	> cd ../..
+   Without C3:
+	> build/X86/gem5.opt configs/example/se.py --cpu-type=O3_X86_icelake_1 --caches --cmd=tests/c3_tests/mibench/security/blowfish/bf --options="e tests/c3_tests/mibench/security/blowfish/input_small.asc bf_output_small_noc3 1234567890abcdeffedcba0987654321" --env=./dummy_flag.env
+   And with C3:
+	> build/X86/gem5.opt configs/example/se.py --cpu-type=O3_X86_icelake_1 --caches --cmd=tests/c3_tests/mibench/security/blowfish/bf --options="e tests/c3_tests/mibench/security/blowfish/input_small.asc bf_output_small_c3 1234567890abcdeffedcba0987654321" --env=./c3_enable.env
+   In both cases, the benchmark should run for a few minutes, then output "Exiting @ tick <X> because exiting with last active thread context". Blowfish will exit with an error ("Simulated exit code not 0!"); this is fine. The number <X> is the number of ticks gem5 took to complete execution. This is a measure of performance: there are 500 ticks per simulated cycle.
+
+6. Build Blowfish with SLH:
+	> cd tests/c3_tests
+	> make mibench/security/blowfish/bf_slh
+
+7. Gather data for Blowfish (with SLH) in gem5:
+	> cd ../..
+   The command here is exactly the same as the above without-C3 command:
+	> build/X86/gem5.opt configs/example/se.py --cpu-type=O3_X86_icelake_1 --caches --cmd=tests/c3_tests/mibench/security/blowfish/bf --options="e tests/c3_tests/mibench/security/blowfish/input_small.asc bf_output_small_noc3 1234567890abcdeffedcba0987654321" --env=./dummy_flag.env
+
+8. Modify Embench to use glibc allocators:
+   By default, Embench uses simplistic "BEEBS" allocators meant to minimize benchmark overhead. C3 requires that glibc's allocators be used instead. So do the following to replace all calls to malloc_beebs/calloc_beebs:
+	> cd embench-iot
+	> find ./src/ -type f -exec sed -i 's/alloc_beebs/alloc/g' {} \;
+
+9. Build Embench without SLH:
+   Run the following, replacing all <YOU>s with your Linux username:
+	> ./build_all.py --arch native --chip default --board default --cc clang --cflags="-O2 -L /home/<YOU>/c3-perf-simulator/c3-simulator/glibc/glibc-2.30_install/lib -I /home/<YOU>/c3-perf-simulator/c3-simulator/glibc/glibc-2.30_install/include" --ldflags="-L /home/<YOU>/c3-perf-simulator/c3-simulator/glibc/glibc-2.30_install/lib -I /home/<YOU>/c3-perf-simulator/c3-simulator/glibc/glibc-2.30_install/include -Wl,--rpath=/home/<YOU>/c3-perf-simulator/c3-simulator/glibc/glibc-2.30_install/lib -Wl,--dynamic-linker=/home/<YOU>/c3-perf-simulator/c3-simulator/glibc/glibc-2.30_install/lib/ld-linux-x86-64.so.2" --warmup-heat 99
+
+10. Gather data for Embench (no SLH) in gem5:
+	> cd ..
+   The four benchmarks which use an allocator and run successfully are huffbench, md5sum, sglib-combined, and tarfind.
+   For each of those benchmarks, run:
+	> build/X86/gem5.opt configs/example/se.py --cpu-type=O3_X86_icelake_1 --caches --cmd=embench-iot/bd/src/<name>/<name> --env=./dummy_flag.env
+	> build/X86/gem5.opt configs/example/se.py --cpu-type=O3_X86_icelake_1 --caches --cmd=embench-iot/bd/src/<name>/<name> --env=./c3_enable.env
+   As above, record the number of ticks execution takes for each run.
+
+11. Build Embench with SLH:
+	> cd embench-iot
+   Remove the build directory:
+	> rm bd -rf
+   Run the same command as above, but with the additional cflag `-mspeculative-load-hardening':
+	> ./build_all.py --arch native --chip default --board default --cc clang --cflags="-O2 -mspeculative-load-hardening -L /home/<YOU>/c3-perf-simulator/c3-simulator/glibc/glibc-2.30_install/lib -I /home/<YOU>/c3-perf-simulator/c3-simulator/glibc/glibc-2.30_install/include" --ldflags="-L /home/<YOU>/c3-perf-simulator/c3-simulator/glibc/glibc-2.30_install/lib -I /home/<YOU>/c3-perf-simulator/c3-simulator/glibc/glibc-2.30_install/include -Wl,--rpath=/home/<YOU>/c3-perf-simulator/c3-simulator/glibc/glibc-2.30_install/lib -Wl,--dynamic-linker=/home/<YOU>/c3-perf-simulator/c3-simulator/glibc/glibc-2.30_install/lib/ld-linux-x86-64.so.2" --warmup-heat 99
+
+12. Gather data for Embench (with SLH) in gem5:
+	> cd ..
+   Repeat step 10's no-C3 command for all relevant benchmarks. The results will be different because the workloads are different.
+	> build/X86/gem5.opt configs/example/se.py --cpu-type=O3_X86_icelake_1 --caches --cmd=embench-iot/bd/src/<name>/<name> --env=./dummy_flag.env
+
