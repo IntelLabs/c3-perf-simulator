@@ -1,0 +1,6 @@
+[submodule "c3-simulator"]
+	path = c3-simulator
+	url = https://github.com/intellabs/c3-simulator
+[submodule "tests/c3_tests/mibench"]
+	path = tests/c3_tests/mibench
+	url = https://github.com/embecosm/mibench.git
