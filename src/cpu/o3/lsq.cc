@@ -51,10 +51,12 @@
 #include "cpu/o3/dyn_inst.hh"
 #include "cpu/o3/iew.hh"
 #include "cpu/o3/limits.hh"
+#include "debug/C3DEBUG.hh"
 #include "debug/Drain.hh"
 #include "debug/Fetch.hh"
 #include "debug/HtmCpu.hh"
 #include "debug/LSQ.hh"
+#include "debug/TLB.hh"
 #include "debug/Writeback.hh"
 #include "params/BaseO3CPU.hh"
 
@@ -1226,22 +1228,75 @@ LSQ::LSQRequest::contextId() const
 void
 LSQ::LSQRequest::sendFragmentToTranslation(int i)
 {
-    ///** Uncomment this block to use blocking pointer decryption!
-    if (!req(i)->isDoneDecryptingPointer()) {
-        this->markDelayed();
-        return;
-    }
+    ///** This block holds the logic for blocking (i.e., no PredTLB)
+    ///   pointer decryption:
+    // if (this->_inst->encodedPointer() && !this->_inst->pointerDecoded) {
+    //     this->_inst->pointerDecoded = true;
+    //     this->_addr = this->_inst->cpu->cryptoModule.decode_pointer(
+    //         this->_addr);
+    //     req(i)->_vaddr = this->_inst->cpu->cryptoModule.decode_pointer(
+    //         req(i)->_vaddr);
+    // }
 
-    if (this->_inst->encodedPointer()) {
+    // if (!req(i)->isDoneDecryptingPointer()) {
+    //     this->markDelayed();
+    //     return;
+    // }
+    //*/
+
+    // We're building a simulator here, so let's use some simulator magic.
+    // Specifically, magic out the pointer decryption step --
+    // we will do it immediately but pretend we haven't.
+    // (To only do this step once, we'll do it iff the addr is non-canonical.)
+    Addr addr = this->_addr;
+    uint64_t addr_size = (addr & (0b111111llu << 57)) >> 57;
+    // if size is 0 or -1, we're accessing an LA.
+    // otherwise, mark this pointer as a CA
+    bool isEncoded = !((addr_size == 0) || (addr_size == 0b111111));
+    bool predTLBCorrect = false;
+    if (isEncoded) {
+        DPRINTF(C3DEBUG,
+          "(Magically) decrypting requested address %x for inst @ %x... ",
+          req(i)->_vaddr, this->_inst);
+        // then update it with its decrypted address.
         this->_addr = this->_inst->cpu->cryptoModule.decode_pointer(
             this->_addr);
         req(i)->_vaddr = this->_inst->cpu->cryptoModule.decode_pointer(
             req(i)->_vaddr);
-    }
-    //*/
-    numInTranslationFragments++;
-    _port.getMMUPtr()->translateTiming(req(i), _inst->thread->getTC(),
+        DPRINTF(C3DEBUG, "got %x.\n", req(i)->_vaddr);
+
+        // Exactly once per CA inst, check if PredTLB would be correct.
+        // Comment this out to disable PredTLB.
+        // TODO: add a flag to disable/enable PredTLB
+        predTLBCorrect = _port.getMMUPtr()->doesPredTLBSucceed(
+            req(i), _inst->thread->getTC(),
             this, isLoad() ? BaseMMU::Read : BaseMMU::Write);
+    }
+    // The pointer is ready to be translated IF:
+    // - it's an LA or a CA that has finished decryption, OR
+    // - it's a CA that PredTLB predicts correctly.
+    bool readyForTranslation =
+      (req(i)->isDoneDecryptingPointer() || predTLBCorrect);
+    if (!req(i)->_isCrypto) {
+        DPRINTF(C3DEBUG, "This is a linear address.\n");
+    } else if (req(i)->isDoneDecryptingPointer()) {
+        DPRINTF(C3DEBUG,
+          "Pointer decryption has finished, so we'll translate.\n");
+    } else if (readyForTranslation) {
+        DPRINTF(C3DEBUG,
+          "Pointer decryption incomplete, but PredTLB is correct!\n");
+    }
+
+    if (readyForTranslation)
+    {
+        numInTranslationFragments++;
+        _port.getMMUPtr()->translateTiming(req(i), _inst->thread->getTC(),
+                this, isLoad() ? BaseMMU::Read : BaseMMU::Write);
+    } else {
+        // Otherwise, stall (via markDelayed, for now).
+        this->markDelayed();
+        DPRINTF(C3DEBUG, "Delayed!\n");
+    }
 }
 
 void

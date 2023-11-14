@@ -1580,6 +1580,7 @@ CPU::pushRequest(const DynInstPtr& inst, bool isLoad, uint8_t *data,
     // (unimportant) TODO: condition the following on CR3 bits.
     // TODO: make this macro'd out if we aren't using X86
     inst->encodedPointer(false);
+    inst->pointerDecoded = true;
     bool do_LAM = true;
     if (do_LAM) {
         // if bits 63 and 47 don't match, the check fails! Throw #GP.
@@ -1596,6 +1597,7 @@ CPU::pushRequest(const DynInstPtr& inst, bool isLoad, uint8_t *data,
         // otherwise, mark this pointer as a CA
         bool isEncoded = !((addr_size == 0) || (addr_size == 0b111111));
         inst->encodedPointer(isEncoded);
+        inst->pointerDecoded = !isEncoded;
         // Store the original address for reference
         inst->_encoded_la = addr;
 #else

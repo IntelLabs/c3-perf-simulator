@@ -132,7 +132,7 @@ namespace X86ISA
 
         Fault translate(const RequestPtr &req, ThreadContext *tc,
                 BaseMMU::Translation *translation, BaseMMU::Mode mode,
-                bool &delayedResponse, bool timing);
+                bool &delayedResponse, bool timing, bool fake);
 
       public:
 
@@ -153,6 +153,9 @@ namespace X86ISA
         void translateTiming(
             const RequestPtr &req, ThreadContext *tc,
             BaseMMU::Translation *translation, BaseMMU::Mode mode) override;
+        bool doesPredTLBSucceed(
+            const RequestPtr& req, ThreadContext* tc,
+            BaseMMU::Translation* translation, BaseMMU::Mode mode);
 
         /**
          * Do post-translation physical address finalization.

@@ -97,8 +97,10 @@ class LSQUnit
       private:
         /** The instruction. */
         DynInstPtr _inst;
+      public:
         /** The request. */
         LSQRequest* _request = nullptr;
+      private:
         /** The size of the operation. */
         uint32_t _size = 0;
         /** Valid entry. */

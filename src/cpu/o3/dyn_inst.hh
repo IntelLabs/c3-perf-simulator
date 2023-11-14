@@ -364,6 +364,8 @@ class DynInst : public ExecContext, public RefCounted
      * packet receipt.) */
     bool hasStoreCoverage = false;
 
+    bool pointerDecoded = true;
+
 
     /////////////////////// TLB Miss //////////////////////
     /**
