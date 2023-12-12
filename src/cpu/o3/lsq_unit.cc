@@ -293,13 +293,20 @@ LSQUnit::LSQUnitStats::LSQUnitStats(statistics::Group *parent)
                "Number of loads that were rescheduled"),
       ADD_STAT(rescheduledLoadsCA, statistics::units::Count::get(),
                "Number of CA loads that were rescheduled"),
+      ADD_STAT(lsForwMismatches, statistics::units::Count::get(),
+               "Number of bad store-load forwarding occurences"),
       ADD_STAT(blockedByCache, statistics::units::Count::get(),
                "Number of times an access to memory failed due to the cache "
                "being blocked"),
       ADD_STAT(loadToUse, "Distribution of cycle latency between the "
-                "first time a load is issued and its completion")
+                "first time a load is issued and its completion"),
+      ADD_STAT(cryptoLoadToUse, "Distribution of cycle latency between the "
+                "first time a CA load is issued and its completion")
 {
     loadToUse
+        .init(0, 299, 10)
+        .flags(statistics::nozero);
+    cryptoLoadToUse
         .init(0, 299, 10)
         .flags(statistics::nozero);
 }
@@ -757,7 +764,11 @@ LSQUnit::commitLoad()
     if (!inst->isInstPrefetch() && !inst->isDataPrefetch()
             && inst->firstIssue != -1
             && inst->lastWakeDependents != -1) {
-        stats.loadToUse.sample(cpu->ticksToCycles(
+        if (inst->encodedPointer())
+            stats.cryptoLoadToUse.sample(cpu->ticksToCycles(
+                    inst->lastWakeDependents - inst->firstIssue));
+        else
+            stats.loadToUse.sample(cpu->ticksToCycles(
                     inst->lastWakeDependents - inst->firstIssue));
     }
 
@@ -1747,6 +1758,8 @@ LSQUnit::read(LSQRequest *request, ssize_t load_idx)
                 DPRINTF(LSQUnit, "Load-store forwarding mis-match. "
                         "Store idx %i to load addr %#x\n",
                         store_it._idx, request->mainReq()->getVaddr());
+
+                ++stats.lsForwMismatches;
 
                 // Must discard the request.
                 request->discard();

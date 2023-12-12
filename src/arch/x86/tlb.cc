@@ -332,7 +332,7 @@ TLB::translate(const RequestPtr &req,
 
     delayedResponse = false;
 
-    bool is_predictive = false;
+    bool is_predictive = fake;
 
     // If this is true, we're dealing with a request to a non-memory address
     // space.
@@ -430,6 +430,18 @@ TLB::translate(const RequestPtr &req,
             // only update on a real lookup
             TlbEntry* entry = lookup(pageAlignedVaddr, !fake, false);
 
+            if (fake) {
+                // this is a bit of a hack -- store (pred_entry == entry)
+                // in delayedResponse. It's not used yet anyway.
+                if (pred_entry && entry) {
+                    if (pred_entry->vaddr == entry->vaddr) {
+                        delayedResponse = true;
+                    }
+                }
+                // Then just exit the function -- don't touch the TLB.
+                return NoFault;
+            }
+
             if (entry) {
                 // assumption: one entry (ptr) per page-aligned vaddr.
                 // If this implementation is correct, any real TLB
@@ -442,7 +454,6 @@ TLB::translate(const RequestPtr &req,
                 assert(pred_entry);
                 if (pred_entry == entry) {
                     if (req->_isCrypto) {
-                        // (note: with PredTLB enabled, this is dead code)
                         if (mode == BaseMMU::Read)
                             stats.cryptoReadPredTLBCorrect++;
                         else
@@ -457,6 +468,9 @@ TLB::translate(const RequestPtr &req,
                 }
             }
 
+            // by construction, the ONLY pred read accesses are crypto
+            // TODO: fix the stats...
+
             if (mode == BaseMMU::Read) {
                 if (is_predictive)
                     stats.predRdAccesses++;
@@ -469,18 +483,6 @@ TLB::translate(const RequestPtr &req,
                 if (req->_isCrypto)
                     stats.cryptoWrAccesses++;
                 stats.wrAccesses++;
-            }
-
-            if (fake) {
-                // this is a bit of a hack -- store (pred_entry == entry)
-                // in delayedResponse. It's not used yet anyway.
-                if (pred_entry && entry) {
-                    if (pred_entry->vaddr == entry->vaddr) {
-                        delayedResponse = true;
-                    }
-                }
-                // Then just exit the function -- don't touch the TLB.
-                return NoFault;
             }
 
             if (!entry) {

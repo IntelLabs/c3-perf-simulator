@@ -556,12 +556,17 @@ class LSQUnit
         /** Number of CA loads that were rescheduled. */
         statistics::Scalar rescheduledLoadsCA;
 
+        /** Number of bad store-load forwarding occurrences */
+        statistics::Scalar lsForwMismatches;
+
         /** Number of times the LSQ is blocked due to the cache. */
         statistics::Scalar blockedByCache;
 
         /** Distribution of cycle latency between the first time a load
          * is issued and its completion */
         statistics::Distribution loadToUse;
+
+        statistics::Distribution cryptoLoadToUse;
     } stats;
 
   public:
