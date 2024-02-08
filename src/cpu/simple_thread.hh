@@ -124,6 +124,12 @@ class SimpleThread : public ThreadState, public ThreadContext
      */
     EventQueue comInstEventQueue;
 
+    /**
+     * An fcnt-based event queue. Used for scheduling events based on
+     * number of fcnts committed.
+     */
+    EventQueue comFcntEventQueue;
+
     System *system;
 
     BaseMMU *mmu;
@@ -190,6 +196,22 @@ class SimpleThread : public ThreadState, public ThreadContext
     getCurrentInstCount() override
     {
         return comInstEventQueue.getCurTick();
+    }
+
+    void
+    scheduleFcntCountEvent(Event *event, Tick count) override
+    {
+        comFcntEventQueue.schedule(event, count);
+    }
+    void
+    descheduleFcntCountEvent(Event *event) override
+    {
+        comFcntEventQueue.deschedule(event);
+    }
+    Tick
+    getCurrentFcntCount() override
+    {
+        return comFcntEventQueue.getCurTick();
     }
 
     BaseCPU *getCpuPtr() override { return baseCpu; }

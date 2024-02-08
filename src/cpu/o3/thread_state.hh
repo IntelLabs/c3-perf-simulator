@@ -73,6 +73,12 @@ class ThreadState : public gem5::ThreadState
      */
     EventQueue comInstEventQueue;
 
+    /**
+     * An fcnt-based event queue. Used for scheduling events based on
+     * number of fcnts committed.
+     */
+    EventQueue comFcntEventQueue;
+
     /* This variable controls if writes to a thread context should cause a all
      * dynamic/speculative state to be thrown away. Nominally this is the
      * desired behavior because the external thread context write has updated

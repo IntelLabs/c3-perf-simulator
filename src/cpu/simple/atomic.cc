@@ -650,6 +650,8 @@ AtomicSimpleCPU::tick()
 
         serviceInstCountEvents();
 
+        serviceFcntCountEvents();
+
         Fault fault = NoFault;
 
         const PCStateBase &pc = thread->pcState();

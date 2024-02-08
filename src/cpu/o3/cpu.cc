@@ -115,6 +115,7 @@ CPU::CPU(const BaseO3CPUParams &params)
       lastRunningCycle(curCycle()),
       pointerDecryptionDelay(params.pointer_decryption_delay),
       dataKeystreamDelay(params.data_keystream_delay),
+      enablePredTLB(params.enablePredTLB),
       cpuStats(this)
 {
     cryptoModule = CCPointerEncoding();
@@ -333,6 +334,8 @@ CPU::CPUStats::CPUStats(CPU *cpu)
                "for an interrupt"),
       ADD_STAT(committedInsts, statistics::units::Count::get(),
                "Number of Instructions Simulated"),
+      ADD_STAT(committedFcnts, statistics::units::Count::get(),
+               "Number of Fcnts Simulated"),
       ADD_STAT(committedOps, statistics::units::Count::get(),
                "Number of Ops (including micro ops) Simulated"),
       ADD_STAT(cpi, statistics::units::Rate<
@@ -387,6 +390,10 @@ CPU::CPUStats::CPUStats(CPU *cpu)
     // Should probably be in Base CPU but need templated
     // MaxThreads so put in here instead
     committedInsts
+        .init(cpu->numThreads)
+        .flags(statistics::total);
+
+    committedFcnts
         .init(cpu->numThreads)
         .flags(statistics::total);
 
@@ -1236,6 +1243,14 @@ CPU::instDone(ThreadID tid, const DynInstPtr &inst)
 
         // Check for instruction-count-based events.
         thread[tid]->comInstEventQueue.serviceEvents(thread[tid]->numInst);
+
+        if (inst->isFcnt()) {
+            thread[tid]->numFcnt++;
+            thread[tid]->threadStats.numFcnts++;
+            cpuStats.committedFcnts[tid]++;
+            // Check for function-count-based events.
+            thread[tid]->comFcntEventQueue.serviceEvents(thread[tid]->numFcnt);
+        }
     }
     thread[tid]->numOp++;
     thread[tid]->threadStats.numOps++;

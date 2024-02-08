@@ -140,6 +140,9 @@ class BaseCPU(ClockedObject):
     max_insts_any_thread = Param.Counter(
         0, "terminate when any thread reaches this inst count"
     )
+    max_fcnts_any_thread = Param.Counter(
+        0, "terminate when any thread reaches this fcnt count"
+    )
     simpoint_start_insts = VectorParam.Counter(
         [], "starting instruction counts of simpoints"
     )

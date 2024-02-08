@@ -158,6 +158,8 @@ Commit::CommitStats::CommitStats(CPU *cpu, Commit *commit)
                "Number of insts commited each cycle"),
       ADD_STAT(instsCommitted, statistics::units::Count::get(),
                "Number of instructions committed"),
+      ADD_STAT(fcntsCommitted, statistics::units::Count::get(),
+               "Number of fcnts committed"),
       ADD_STAT(opsCommitted, statistics::units::Count::get(),
                "Number of ops (including micro ops) committed"),
       ADD_STAT(memRefs, statistics::units::Count::get(),
@@ -196,6 +198,10 @@ Commit::CommitStats::CommitStats(CPU *cpu, Commit *commit)
         .flags(statistics::pdf);
 
     instsCommitted
+        .init(cpu->numThreads)
+        .flags(total);
+
+    fcntsCommitted
         .init(cpu->numThreads)
         .flags(total);
 
@@ -1443,6 +1449,8 @@ Commit::updateComInstStats(const DynInstPtr &inst)
     if (inst->isCall())
         stats.functionCalls[tid]++;
 
+    if (inst->isFcnt())
+        stats.fcntsCommitted[tid]++;
 }
 
 ////////////////////////////////////////

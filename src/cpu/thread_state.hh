@@ -86,6 +86,10 @@ struct ThreadState : public Serializable
 
     /** Number of instructions committed. */
     Counter numInst;
+
+    /** Number of fcnts committed. */
+    Counter numFcnt;
+
      /** Number of ops (including micro ops) committed. */
     Counter numOp;
     // Defining the stat group
@@ -94,6 +98,10 @@ struct ThreadState : public Serializable
         ThreadStateStats(BaseCPU *cpu, const ThreadID& thread);
         /** Stat for number instructions committed. */
         statistics::Scalar numInsts;
+
+        /** Stat for number fcnts committed. */
+        statistics::Scalar numFcnts;
+
         /** Stat for number ops (including micro ops) committed. */
         statistics::Scalar numOps;
         /** Stat for number of memory references. */

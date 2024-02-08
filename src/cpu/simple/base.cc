@@ -300,6 +300,13 @@ BaseSimpleCPU::serviceInstCountEvents()
 }
 
 void
+BaseSimpleCPU::serviceFcntCountEvents()
+{
+    SimpleExecContext &t_info = *threadInfo[curThread];
+    t_info.thread->comFcntEventQueue.serviceEvents(t_info.numFcnt);
+}
+
+void
 BaseSimpleCPU::preExecute()
 {
     SimpleExecContext &t_info = *threadInfo[curThread];

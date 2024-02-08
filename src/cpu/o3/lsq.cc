@@ -870,26 +870,26 @@ LSQ::pushRequest(const DynInstPtr& inst, bool isLoad, uint8_t *data,
             inst->isDataKeyGenReady(true);
         }
 
-        // Event function wrapper for data keystream generation unit.
-        EventFunctionWrapper *dataKeyGen = new EventFunctionWrapper(
-        [this, inst]{
-            inst->isDataKeyGenReady(true);
-            DPRINTF(LSQUnit,
-        "Complete data keystream generation for Inst [sn:%lli]\n",
-        inst->seqNum);
-            if (!inst->isSquashed()) {
-                cpu->wakeCPU();
-            } else {
-                DPRINTF(LSQUnit, "But that inst was squashed.\n");
-            }
-        },
-        "dataKeyGen", true, Event::CPU_Tick_Pri);
-
         // Schedule the event of data keystream generation.
         if (inst->encodedPointer()){
+            // Event function wrapper for data keystream generation unit.
+            EventFunctionWrapper *dataKeyGen = new EventFunctionWrapper(
+            [this, inst]{
+                    inst->isDataKeyGenReady(true);
+                    DPRINTF(LSQUnit,
+                    "Complete data keystream generation for Inst [sn:%lli]\n",
+                    inst->seqNum);
+                    if (!inst->isSquashed()) {
+                            cpu->wakeCPU();
+                    } else {
+                            DPRINTF(LSQUnit, "But that inst was squashed.\n");
+                    }
+            },
+            "dataKeyGen", true, Event::CPU_Tick_Pri);
+
             DPRINTF(LSQUnit,
-        "Initialize data keystream generation for Inst [sn:%lli]\n",
-        inst->seqNum);
+                "Initialize data keystream generation for Inst [sn:%lli]\n",
+                inst->seqNum);
             cpu->schedule(dataKeyGen, cpu->clockEdge(
                 Cycles(DATA_KEYSTREAM_GENERATION_DELAY)));
         }
@@ -1032,6 +1032,12 @@ LSQ::SingleDataRequest::initiateTranslation()
         flags.set(Flag::TranslationStarted);
 
         _inst->savedRequest = this;
+
+        if (!lsqUnit()->enablePredTLB &&
+            !_reqs.back()->isDoneDecryptingPointer()) {
+            return;
+        }
+
         sendFragmentToTranslation(0);
     } else {
         _inst->setMemAccPredicate(false);
@@ -1114,6 +1120,11 @@ LSQ::SplitDataRequest::initiateTranslation()
         numInTranslationFragments = 0;
         numTranslatedFragments = 0;
         _fault.resize(_reqs.size());
+
+        if (!lsqUnit()->enablePredTLB &&
+            !_reqs.back()->isDoneDecryptingPointer()) {
+            return;
+        }
 
         for (uint32_t i = 0; i < _reqs.size(); i++) {
             sendFragmentToTranslation(i);
@@ -1248,7 +1259,7 @@ LSQ::LSQRequest::sendFragmentToTranslation(int i)
     // Specifically, magic out the pointer decryption step --
     // we will do it immediately but pretend we haven't.
     // (To only do this step once, we'll do it iff the addr is non-canonical.)
-    Addr addr = this->_addr;
+    Addr addr = req(i)->_vaddr;
     uint64_t addr_size = (addr & (0b111111llu << 57)) >> 57;
     // if size is 0 or -1, we're accessing an LA.
     // otherwise, mark this pointer as a CA
@@ -1268,9 +1279,12 @@ LSQ::LSQRequest::sendFragmentToTranslation(int i)
         // Exactly once per CA inst, check if PredTLB would be correct.
         // Comment this out to disable PredTLB.
         // TODO: add a flag to disable/enable PredTLB
-        predTLBCorrect = _port.getMMUPtr()->doesPredTLBSucceed(
-            req(i), _inst->thread->getTC(),
-            this, isLoad() ? BaseMMU::Read : BaseMMU::Write);
+        if (lsqUnit()->enablePredTLB) {
+            predTLBCorrect = _port.getMMUPtr()->doesPredTLBSucceed(
+                    req(i), _inst->thread->getTC(),
+                    this, isLoad() ? BaseMMU::Read : BaseMMU::Write);
+            DPRINTF(C3DEBUG, "predTLBCorrect: %d.\n", predTLBCorrect);
+        }
     }
     // The pointer is ready to be translated IF:
     // - it's an LA or a CA that has finished decryption, OR
@@ -1290,6 +1304,7 @@ LSQ::LSQRequest::sendFragmentToTranslation(int i)
     if (readyForTranslation)
     {
         numInTranslationFragments++;
+        //printf("(0) Hello?\n");
         _port.getMMUPtr()->translateTiming(req(i), _inst->thread->getTC(),
                 this, isLoad() ? BaseMMU::Read : BaseMMU::Write);
     } else {

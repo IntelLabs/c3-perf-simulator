@@ -445,6 +445,21 @@ class BaseCPU : public ClockedObject
     void scheduleInstStop(ThreadID tid, Counter insts, std::string cause);
 
     /**
+     * Schedule an event that exits the simulation loops after a
+     * predefined number of fcnts.
+     *
+     * This method is usually called from the configuration script to
+     * get an exit event some time in the future. It is typically used
+     * when the script wants to simulate for a specific number of
+     * instructions rather than ticks.
+     *
+     * @param tid Thread monitor.
+     * @param fcnts Number of fcnts into the future.
+     * @param cause Cause to signal in the exit event.
+     */
+    void scheduleFcntStop(ThreadID tid, Counter fcnts, std::string cause);
+
+    /**
      * Schedule simpoint events using the scheduleInstStop function.
      *
      * This is used to raise a SIMPOINT_BEGIN exit event in the gem5 standard
@@ -473,6 +488,25 @@ class BaseCPU : public ClockedObject
      * @return Number of instructions executed
      */
     uint64_t getCurrentInstCount(ThreadID tid);
+
+    /**
+     * Schedule an exit event when any threads in the core reach the max_fcnts
+     * instructions using the scheduleInstStop function.
+     *
+     * This is used to raise a MAX_FCNTS exit event in thegem5 standard library
+     *
+     * @param max_fcnts Number of fcnts into the future.
+     */
+    void scheduleFcntStopAnyThread(Counter max_fcnts);
+
+    /**
+     * Get the number of fcnts executed by the specified thread
+     * on this CPU. Used by Python to control simulation.
+     *
+     * @param tid Thread monitor
+     * @return Number of fcnts executed
+     */
+    uint64_t getCurrentFcntCount(ThreadID tid);
 
   public:
     /**

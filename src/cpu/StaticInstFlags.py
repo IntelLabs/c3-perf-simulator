@@ -65,6 +65,7 @@ class StaticInstFlags(Enum):
         "IsUncondControl",  # Unconditional control transfer.
         "IsCall",  # Subroutine call.
         "IsReturn",  # Subroutine return.
+        "IsFcnt",  # Function counter.
         "IsSerializing",  # Serializes pipeline: won't execute until all
         # older instructions have committed.
         "IsSerializeBefore",

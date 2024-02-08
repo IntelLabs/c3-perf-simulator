@@ -88,6 +88,10 @@ TranslatingPortProxy::tryOnBlob(BaseMMU::Mode mode, TranslationGenPtr gen,
 bool
 TranslatingPortProxy::tryReadBlob(Addr addr, void *p, int size) const
 {
+    // Encrypted pointers can be passed to syscalls
+    // Those should be decrypted before being used
+    addr = (Addr) (((uint64_t) addr << 16) >> 16);
+    p = (void *) (((uint64_t) p << 16) >> 16);
     constexpr auto mode = BaseMMU::Read;
     return tryOnBlob(mode, _tc->getMMUPtr()->translateFunctional(
             addr, size, _tc, mode, flags),
@@ -101,6 +105,9 @@ bool
 TranslatingPortProxy::tryWriteBlob(
         Addr addr, const void *p, int size) const
 {
+    // Encrypted pointers can be passed to syscalls
+    // Those should be decrypted before being used
+    addr = (Addr) (((uint64_t) addr << 16) >> 16);
     constexpr auto mode = BaseMMU::Write;
     return tryOnBlob(mode, _tc->getMMUPtr()->translateFunctional(
             addr, size, _tc, mode, flags),
@@ -113,6 +120,9 @@ TranslatingPortProxy::tryWriteBlob(
 bool
 TranslatingPortProxy::tryMemsetBlob(Addr addr, uint8_t v, int size) const
 {
+    // Encrypted pointers can be passed to syscalls
+    // Those should be decrypted before being used
+    addr = (Addr) (((uint64_t) addr << 16) >> 16);
     constexpr auto mode = BaseMMU::Write;
     return tryOnBlob(mode, _tc->getMMUPtr()->translateFunctional(
             addr, size, _tc, mode, flags),

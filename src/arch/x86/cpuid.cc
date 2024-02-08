@@ -93,6 +93,16 @@ namespace X86ISA {
     {
         uint16_t family = bits(function, 31, 16);
         uint16_t funcNum = bits(function, 15, 0);
+        // To prevent glibc from selecting str/mem functions written with
+        // advanced x86 vector instructions which are not supported in gem5,
+        // mask some bits indicating vector capabilities
+        disable x86 vector instructions
+        uint64_t mask = ~((uint64_t) 1 << 0 |   // sse3
+                        (uint64_t) 1 << 9   |   // ssse3
+                        (uint64_t) 1 << 19  |   // sse4.1
+                        (uint64_t) 1 << 20  |   // sse4.2
+                        (uint64_t) 1 << 28);    // avx
+
         if (family == 0x8000) {
             // The extended functions
             switch (funcNum) {
@@ -186,6 +196,7 @@ namespace X86ISA {
             return false;
         }
 
+        result.rcx &= mask;
         return true;
     }
 } // namespace X86ISA

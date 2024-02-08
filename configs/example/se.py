@@ -223,7 +223,8 @@ if ObjectList.is_kvm_cpu(CPUClass) or ObjectList.is_kvm_cpu(FutureClass):
 
 # Sanity check
 if args.simpoint_profile:
-    if not ObjectList.is_noncaching_cpu(CPUClass):
+    if not ObjectList.is_atomic_cpu(CPUClass):
+        # if not ObjectList.is_noncaching_cpu(CPUClass):
         fatal("SimPoint/BPProbe should be done with an atomic cpu")
     if np > 1:
         fatal("SimPoint generation not supported with more than one CPUs")
@@ -257,6 +258,9 @@ for i in range(np):
 
     if args.data_keystream_delay:
         system.cpu[i].data_keystream_delay = args.data_keystream_delay
+
+    if args.enablePredTLB:
+        system.cpu[i].enablePredTLB = args.enablePredTLB
 
     system.cpu[i].createThreads()
 

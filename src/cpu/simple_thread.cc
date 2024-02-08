@@ -80,6 +80,7 @@ SimpleThread::SimpleThread(BaseCPU *_cpu, int _thread_num, System *_sys,
       isa(_isa),
       predicate(true), memAccPredicate(true),
       comInstEventQueue("instruction-based event queue"),
+      comFcntEventQueue("fcnt-based event queue"),
       system(_sys), mmu(_mmu), decoder(_decoder),
       htmTransactionStarts(0), htmTransactionStops(0)
 {

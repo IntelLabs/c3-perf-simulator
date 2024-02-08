@@ -7,5 +7,16 @@ def macroop CCENCPTR_R_R
 {
     ccencptr reg, reg, regm
 };
+
+def macroop CCDECPTR_R_R
+{
+    ccdecptr reg, reg, regm
+};
+
+def macroop FCNT_R_R
+{
+		.function_count
+
+    fcnt reg, reg, regm
+};
 """
-# TODO: implement CCDECPTR_R_R

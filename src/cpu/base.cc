@@ -278,6 +278,12 @@ BaseCPU::init()
         scheduleInstStopAnyThread(params().max_insts_any_thread);
     }
 
+    // Set up function-count-based termination events, if any. This needs
+    // to happen after threadContexts has been constructed.
+    if (params().max_fcnts_any_thread != 0) {
+        scheduleFcntStopAnyThread(params().max_fcnts_any_thread);
+    }
+
     // Set up instruction-count-based termination events for SimPoints
     // Typically, there are more than one action points.
     // Simulation.py is responsible to take the necessary actions upon
@@ -671,6 +677,21 @@ BaseCPU::getCurrentInstCount(ThreadID tid)
     return threadContexts[tid]->getCurrentInstCount();
 }
 
+void
+BaseCPU::scheduleFcntStop(ThreadID tid, Counter fcnts, std::string cause)
+{
+    const Tick now(getCurrentFcntCount(tid));
+    Event *event(new LocalSimLoopExitEvent(cause, 0));
+
+    threadContexts[tid]->scheduleFcntCountEvent(event, now + fcnts);
+}
+
+Tick
+BaseCPU::getCurrentFcntCount(ThreadID tid)
+{
+    return threadContexts[tid]->getCurrentFcntCount();
+}
+
 AddressMonitor::AddressMonitor()
 {
     armed = false;
@@ -738,6 +759,15 @@ BaseCPU::scheduleInstStopAnyThread(Counter max_insts)
     std::string cause = "a thread reached the max instruction count";
     for (ThreadID tid = 0; tid < numThreads; ++tid) {
         scheduleInstStop(tid, max_insts, cause);
+    }
+}
+
+void
+BaseCPU::scheduleFcntStopAnyThread(Counter max_fcnts)
+{
+    std::string cause = "a thread reached the max fcnt count";
+    for (ThreadID tid = 0; tid < numThreads; ++tid) {
+        scheduleFcntStop(tid, max_fcnts, cause);
     }
 }
 

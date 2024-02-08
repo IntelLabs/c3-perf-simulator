@@ -175,6 +175,10 @@ class ThreadContext : public PCEventScope
     virtual void descheduleInstCountEvent(Event *event) = 0;
     virtual Tick getCurrentInstCount() = 0;
 
+    virtual void scheduleFcntCountEvent(Event *event, Tick count) = 0;
+    virtual void descheduleFcntCountEvent(Event *event) = 0;
+    virtual Tick getCurrentFcntCount() = 0;
+
     // Not necessarily the best location for these...
     // Having an extra function just to read these is obnoxious
     virtual Tick readLastActivate() = 0;

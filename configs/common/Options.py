@@ -723,6 +723,22 @@ def addSEOptions(parser):
         help="Number of cycles to generate the data " "keystream for a CA.",
     )
     parser.add_argument(
+        "--enablePredTLB",
+        action="store_true",
+        default=False,
+        help="""Enable C3 PredTLB.""",
+    )
+
+    # Run duration options
+    parser.add_argument(
+        "--maxfcnts",
+        action="store",
+        type=int,
+        default=None,
+        help="""Total number of fcnts to
+                                            simulate (default: run forever)""",
+    )
+    parser.add_argument(
         "--chroot",
         action="store",
         type=str,

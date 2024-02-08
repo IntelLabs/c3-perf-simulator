@@ -115,6 +115,22 @@ class CheckerThreadContext : public ThreadContext
         return actualTC->getCurrentInstCount();
     }
 
+    void
+    scheduleFcntCountEvent(Event *event, Tick count) override
+    {
+        actualTC->scheduleFcntCountEvent(event, count);
+    }
+    void
+    descheduleFcntCountEvent(Event *event) override
+    {
+        actualTC->descheduleFcntCountEvent(event);
+    }
+    Tick
+    getCurrentFcntCount() override
+    {
+        return actualTC->getCurrentFcntCount();
+    }
+
     BaseCPU *getCpuPtr() override { return actualTC->getCpuPtr(); }
 
     uint32_t socketId() const override { return actualTC->socketId(); }

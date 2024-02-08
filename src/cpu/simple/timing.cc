@@ -806,6 +806,8 @@ TimingSimpleCPU::advanceInst(const Fault &fault)
 
     serviceInstCountEvents();
 
+    serviceFcntCountEvents();
+
     if (_status == BaseSimpleCPU::Running) {
         // kick off fetch of next instruction... callback from icache
         // response will cause that instruction to be executed,

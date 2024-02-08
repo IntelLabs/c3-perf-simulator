@@ -208,3 +208,4 @@ def _subclass_tester(name):
 
 is_kvm_cpu = _subclass_tester("BaseKvmCPU")
 is_noncaching_cpu = _subclass_tester("NonCachingSimpleCPU")
+is_atomic_cpu = _subclass_tester("AtomicSimpleCPU")

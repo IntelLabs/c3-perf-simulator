@@ -48,6 +48,8 @@ MinorStats::MinorStats(BaseCPU *base_cpu)
     : statistics::Group(base_cpu),
     ADD_STAT(numInsts, statistics::units::Count::get(),
              "Number of instructions committed"),
+    ADD_STAT(numFcnts, statistics::units::Count::get(),
+             "Number of fcnts committed"),
     ADD_STAT(numOps, statistics::units::Count::get(),
              "Number of ops (including micro ops) committed"),
     ADD_STAT(numDiscardedOps, statistics::units::Count::get(),

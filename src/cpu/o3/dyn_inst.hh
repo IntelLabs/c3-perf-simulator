@@ -579,6 +579,7 @@ class DynInst : public ExecContext, public RefCounted
     bool isControl()      const { return staticInst->isControl(); }
     bool isCall()         const { return staticInst->isCall(); }
     bool isReturn()       const { return staticInst->isReturn(); }
+    bool isFcnt()         const { return staticInst->isFcnt(); }
     bool isDirectCtrl()   const { return staticInst->isDirectCtrl(); }
     bool isIndirectCtrl() const { return staticInst->isIndirectCtrl(); }
     bool isCondCtrl()     const { return staticInst->isCondCtrl(); }
