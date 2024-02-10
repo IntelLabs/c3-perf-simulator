@@ -258,6 +258,9 @@ for i in range(np):
 
     if args.data_keystream_delay:
         system.cpu[i].data_keystream_delay = args.data_keystream_delay
+        
+    if args.enableSTLF:
+        system.cpu[i].enableSTLF = args.enableSTLF
 
     if args.enablePredTLB:
         system.cpu[i].enablePredTLB = args.enablePredTLB

@@ -522,6 +522,7 @@ class LSQUnit
 
   public:
     bool enablePredTLB;
+    bool enableSTLF;
 
   protected:
     // Will also need how many read/write ports the Dcache has.  Or keep track
@@ -533,6 +534,9 @@ class LSQUnit
 
         /** Total number of loads forwaded from LSQ stores. */
         statistics::Scalar forwLoads;
+
+        /** Total number of CA loads forwaded from LSQ stores. */
+        statistics::Scalar forwLoadsCA;
 
         /** Total number of squashed loads. */
         statistics::Scalar squashedLoads;
@@ -561,6 +565,9 @@ class LSQUnit
 
         /** Number of bad store-load forwarding occurrences */
         statistics::Scalar lsForwMismatches;
+
+        /** Number of bad store-load forwarding occurrences with at least one CA */
+        statistics::Scalar lsForwMismatchesCA;
 
         /** Number of times the LSQ is blocked due to the cache. */
         statistics::Scalar blockedByCache;

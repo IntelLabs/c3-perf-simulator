@@ -115,6 +115,7 @@ CPU::CPU(const BaseO3CPUParams &params)
       lastRunningCycle(curCycle()),
       pointerDecryptionDelay(params.pointer_decryption_delay),
       dataKeystreamDelay(params.data_keystream_delay),
+      enableSTLF(params.enableSTLF),
       enablePredTLB(params.enablePredTLB),
       forceCryptoDelay(params.forceCryptoDelay),
       enableCryptoFunctionality(params.enableCryptoFunctionality),
