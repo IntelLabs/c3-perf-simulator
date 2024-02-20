@@ -143,11 +143,11 @@ fi
 ##################################################################
 
 if [[ "$CONFIG" == "base" ]]; then
-	C3_OPT="--restore-with-cpu=O3_X86_icelake_base"
+	C3_OPT="--restore-with-cpu=O3_X86_icelake_base  -e $GEM5_PATH/c3_no_wrap_enable.env --pointer-decryption-delay 0 --data-keystream-delay 0"
 elif [[ "$CONFIG" == "c3" ]]; then
-	C3_OPT="--restore-with-cpu=O3_X86_icelake_c3 -e $GEM5_PATH/c3_no_wrap_enable.env"
+	C3_OPT="--restore-with-cpu=O3_X86_icelake_c3 -e $GEM5_PATH/c3_no_wrap_enable.env --pointer-decryption-delay 3 --data-keystream-delay 4"
 elif [[ "$CONFIG" == "c3-predtlb" ]]; then
-	C3_OPT="--restore-with-cpu=O3_X86_icelake_c3 -e $GEM5_PATH/c3_no_wrap_enable.env --enablePredTLB"
+	C3_OPT="--restore-with-cpu=O3_X86_icelake_c3 -e $GEM5_PATH/c3_no_wrap_enable.env --pointer-decryption-delay 3 --data-keystream-delay 4 --enablePredTLB"
 else
     echo "Configuration not specified! Should be one of \"base\" or \"c3\" or \"c3-predtlb\". Exiting."
     exit 1
@@ -198,5 +198,5 @@ $GEM5_PATH/build/X86/gem5.opt \
 	--cmd=$RUN_DIR/base.exe \
 	--options="$COMMAND_OPT" $C3_OPT \
 	--num-cpus=1 --mem-size=4GB \
-	--restore-simpoint-checkpoint -r 6 --checkpoint-dir $OUTPUT_DIR --cpu-type=TimingSimpleCPU
+	--restore-simpoint-checkpoint -r 1 --checkpoint-dir $OUTPUT_DIR --cpu-type=TimingSimpleCPU
   --caches | tee -a $SCRIPT_OUT

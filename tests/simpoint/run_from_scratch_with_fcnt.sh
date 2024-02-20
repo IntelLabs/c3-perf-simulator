@@ -23,7 +23,7 @@ else
 fi
 
 ##################################################################
- 
+
 ARGC=$# # Get number of arguments excluding arg0 (the script itself). Check for help message condition.
 if [[ "$ARGC" < 1 ]]; then # Bad number of arguments.
 	echo "Need to pass at least one argument!"
@@ -35,7 +35,7 @@ fi
 BENCHMARK=$1                    # Benchmark name, e.g. bzip2
 CONFIG=$2
 BENCHMARK_CODE="none"
- 
+
 if [[ "$BENCHMARK" == "perlbench_r" ]]; then
   BENCHMARK_CODE="perlbench17"
 	COMMAND_OPT="-I./lib checkspam.pl 2500 5 25 11 150 1 1 1 1"
@@ -158,14 +158,14 @@ if [[ "$BENCHMARK" == "xz_r" ]]; then
 	#COMMAND_OPT="cpu2006docs.tar.xz 250 055ce243071129412e9dd0b3b69a21654033a9b723d874b2015c774fac1553d9713be561ca86f74e4f16f22e664fc17a79f30caa5ad2c04fbc447549c2810fae 2304777423513385 6e > cpu2006docs.tar-250-6e.out 2>> cpu2006docs.tar-250-6e.err"
 	#COMMAND_OPT="input.combined.xz 250 a841f68f38572a49d86226b7ff5baeb31bd19dc637a922a972b2e6d1257a890f6a544ecab967c313e370478c74f760eb229d4eef8a8d2836d233d3e9dd1430bf 4040148441217675 7 > input.combined-250-7.out 2>> input.combined-250-7.err"
 fi
- 
+
 # Sanity check
 if [[ "$BENCHMARK_CODE" == "none" ]]; then
     echo "Input benchmark selection $BENCHMARK did not match any known SPEC CPU2006 benchmarks! Exiting."
     exit 1
 fi
 ##################################################################
- 
+
 if [[ "$CONFIG" == "base" ]]; then
 	C3_OPT=""
 elif [[ "$CONFIG" == "c3" ]]; then
@@ -177,7 +177,6 @@ else
     exit 1
 fi
 
-
 OUTPUT_DIR=$GEM5_PATH/tests/simpoint/output/$BENCHMARK_CODE-$CONFIG
 echo "output directory: " $OUTPUT_DIR
 mkdir -p $OUTPUT_DIR
@@ -187,9 +186,9 @@ RUN_DIR=$SPEC_PATH/$BENCHMARK_CODE/run
 # Run directory for the selected SPEC benchmark
 SCRIPT_OUT=$OUTPUT_DIR/runscript.log
 # File log for this script's stdout henceforth
- 
+
 ################## REPORT SCRIPT CONFIGURATION ###################
- 
+
 echo "Command line:"                                | tee $SCRIPT_OUT
 echo "$0 $*"                                        | tee -a $SCRIPT_OUT
 echo "================= Hardcoded directories ==================" | tee -a $SCRIPT_OUT
@@ -201,19 +200,19 @@ echo "CONFIG:                                    		$CONFIG" | tee -a $SCRIPT_OUT
 echo "OUTPUT_DIR:                                   $OUTPUT_DIR" | tee -a $SCRIPT_OUT
 echo "==========================================================" | tee -a $SCRIPT_OUT
 ##################################################################
- 
- 
+
+
 #################### LAUNCH GEM5 SIMULATION ######################
 echo ""
 echo "Changing to SPEC benchmark runtime directory: $RUN_DIR" | tee -a $SCRIPT_OUT
 cd $RUN_DIR
- 
+
 echo "" | tee -a $SCRIPT_OUT
 echo "" | tee -a $SCRIPT_OUT
 echo "--------- Here goes nothing! Starting gem5! ------------" | tee -a $SCRIPT_OUT
 echo "" | tee -a $SCRIPT_OUT
 echo "" | tee -a $SCRIPT_OUT
- 
+
 #	--output=$OUTPUT_LOG --errout=$ERROUT_LOG \
 #  -e $GEM5_PATH/c3_enable.env \
 #	--maxinsts=100000000 \
