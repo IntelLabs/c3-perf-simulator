@@ -95,6 +95,8 @@ class OpClass(Enum):
         "FloatMemWrite",
         "IprAccess",
         "InstPrefetch",
+        "C3PointerEnc",
+        "C3PointerDec",
     ]
 
 

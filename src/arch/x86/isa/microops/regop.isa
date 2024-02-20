@@ -468,6 +468,7 @@ let {{
             DestReg =
             merge(DestReg, dest, result, dataSize);  // hope this works!
         '''
+        op_class = "C3PointerEncOp"
 
     class CcDecPtr(FlagRegOp):
         code = '''
@@ -477,6 +478,7 @@ let {{
             DestReg =
             merge(DestReg, dest, result, dataSize);  // hope this works!
         '''
+        op_class = "C3PointerDecOp"
 
     class Fcnt(FlagRegOp):
         code = '''

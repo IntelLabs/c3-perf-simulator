@@ -589,10 +589,10 @@ Fetch::fetchCacheLine(Addr vaddr, ThreadID tid, Addr pc)
     mem_req->taskId(cpu->taskId());
 
     // Add LAM for instruction fetch stage
-    uint64_t addr_size = (mem_req->_vaddr & (0b111111llu << 57)) >> 57;
-    bool isEncoded = !((addr_size == 0) || (addr_size == 0b111111));
-    if (isEncoded)
-        mem_req->_vaddr = cpu->cryptoModule.decode_pointer(mem_req->_vaddr);
+    //uint64_t addr_size = (mem_req->_vaddr & (0b111111llu << 57)) >> 57;
+    //bool isEncoded = !((addr_size == 0) || (addr_size == 0b111111));
+    //if (isEncoded)
+    //    mem_req->_vaddr = cpu->cryptoModule.decode_pointer(mem_req->_vaddr);
 
     memReq[tid] = mem_req;
 

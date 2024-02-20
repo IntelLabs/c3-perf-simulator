@@ -150,6 +150,10 @@ class BaseCPU(ClockedObject):
         "0Hz", "frequency to print out the progress message"
     )
 
+    pointer_decryption_delay = Param.Unsigned(3, "C3 ptrdec delay")
+    data_keystream_delay = Param.Unsigned(4, "C3 data keystream delay")
+    enablePredTLB = Param.Bool(False, "Enable C3 PredTLB")  # yh+
+
     switched_out = Param.Bool(
         False,
         "Leave the CPU switched out after startup (used when switching "

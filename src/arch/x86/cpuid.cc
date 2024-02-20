@@ -96,7 +96,6 @@ namespace X86ISA {
         // To prevent glibc from selecting str/mem functions written with
         // advanced x86 vector instructions which are not supported in gem5,
         // mask some bits indicating vector capabilities
-        disable x86 vector instructions
         uint64_t mask = ~((uint64_t) 1 << 0 |   // sse3
                         (uint64_t) 1 << 9   |   // ssse3
                         (uint64_t) 1 << 19  |   // sse4.1
