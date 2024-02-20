@@ -33,79 +33,79 @@ BENCHMARK=$1                    # Benchmark name, e.g. bzip2
 BENCHMARK_CODE="none"
 
 if [[ "$BENCHMARK" == "perlbench_r" ]]; then
-  BENCHMARK_CODE="500.perlbench_r"
+  BENCHMARK_CODE="perlbench_r"
 fi
 if [[ "$BENCHMARK" == "gcc_r" ]]; then
-  BENCHMARK_CODE="502.gcc_r"
+  BENCHMARK_CODE="gcc_r"
 fi
 if [[ "$BENCHMARK" == "bwaves_r" ]]; then
-  BENCHMARK_CODE="503.bwaves_r"
+  BENCHMARK_CODE="bwaves_r"
 fi
 if [[ "$BENCHMARK" == "mcf_r" ]]; then
-  BENCHMARK_CODE="505.mcf_r"
+  BENCHMARK_CODE="mcf_r"
 fi
 if [[ "$BENCHMARK" == "cactusBSSN_r" ]]; then
-  BENCHMARK_CODE="507.cactusBSSN_r"
+  BENCHMARK_CODE="cactusBSSN_r"
 fi
 if [[ "$BENCHMARK" == "namd_r" ]]; then
-  BENCHMARK_CODE="508.namd_r"
+  BENCHMARK_CODE="namd_r"
 fi
 if [[ "$BENCHMARK" == "parest_r" ]]; then
-  BENCHMARK_CODE="510.parest_r"
+  BENCHMARK_CODE="parest_r"
 fi
 if [[ "$BENCHMARK" == "povray_r" ]]; then
-  BENCHMARK_CODE="511.povray_r"
+  BENCHMARK_CODE="povray_r"
 fi
 if [[ "$BENCHMARK" == "lbm_r" ]]; then
-  BENCHMARK_CODE="519.lbm_r"
+  BENCHMARK_CODE="lbm_r"
 fi
 if [[ "$BENCHMARK" == "omnetpp_r" ]]; then
-  BENCHMARK_CODE="520.omnetpp_r"
+  BENCHMARK_CODE="omnetpp_r"
 fi
 if [[ "$BENCHMARK" == "wrf_r" ]]; then
-  BENCHMARK_CODE="521.wrf_r"
+  BENCHMARK_CODE="wrf_r"
 fi
 if [[ "$BENCHMARK" == "xalancbmk_r" ]]; then
-  BENCHMARK_CODE="523.xalancbmk_r"
+  BENCHMARK_CODE="xalancbmk_r"
 fi
 if [[ "$BENCHMARK" == "x264_r" ]]; then
-  BENCHMARK_CODE="525.x264_r"
+  BENCHMARK_CODE="x264_r"
 fi
 if [[ "$BENCHMARK" == "blender_r" ]]; then
-  BENCHMARK_CODE="526.blender_r"
+  BENCHMARK_CODE="blender_r"
 fi
 if [[ "$BENCHMARK" == "cam4_r" ]]; then
-  BENCHMARK_CODE="527.cam4_r"
+  BENCHMARK_CODE="cam4_r"
 fi
 if [[ "$BENCHMARK" == "deepsjeng_r" ]]; then
-  BENCHMARK_CODE="531.deepsjeng_r"
+  BENCHMARK_CODE="deepsjeng_r"
 fi
 if [[ "$BENCHMARK" == "imagick_r" ]]; then
-  BENCHMARK_CODE="538.imagick_r"
+  BENCHMARK_CODE="imagick_r"
 fi
 if [[ "$BENCHMARK" == "leela_r" ]]; then
-  BENCHMARK_CODE="541.leela_r"
+  BENCHMARK_CODE="leela_r"
 fi
 if [[ "$BENCHMARK" == "nab_r" ]]; then
-  BENCHMARK_CODE="544.nab_r"
+  BENCHMARK_CODE="nab_r"
 fi
 if [[ "$BENCHMARK" == "exchange2_r" ]]; then
-  BENCHMARK_CODE="548.exchange2_r"
+  BENCHMARK_CODE="exchange2_r"
 fi
 if [[ "$BENCHMARK" == "fotonik3d_r" ]]; then
-  BENCHMARK_CODE="549.fotonik3d_r"
+  BENCHMARK_CODE="fotonik3d_r"
 fi
 if [[ "$BENCHMARK" == "roms_r" ]]; then
-  BENCHMARK_CODE="554.roms_r"
+  BENCHMARK_CODE="roms_r"
 fi
 if [[ "$BENCHMARK" == "xz_r" ]]; then
-  BENCHMARK_CODE="557.xz_r"
+  BENCHMARK_CODE="xz_r"
 fi
 if [[ "$BENCHMARK" == "specrand_fr" ]]; then
-  BENCHMARK_CODE="997.specrand_fr"
+  BENCHMARK_CODE="specrand_fr"
 fi
 if [[ "$BENCHMARK" == "specrand_ir" ]]; then
-  BENCHMARK_CODE="999.specrand_ir"
+  BENCHMARK_CODE="specrand_ir"
 fi
 
 # Sanity check
