@@ -1038,6 +1038,10 @@ LSQ::SingleDataRequest::initiateTranslation()
             return;
         }
 
+        if (_inst->isStore() && !_reqs.back()->isDoneDecryptingPointer()) {
+            return;
+        }
+
         sendFragmentToTranslation(0);
     } else {
         _inst->setMemAccPredicate(false);
@@ -1123,6 +1127,10 @@ LSQ::SplitDataRequest::initiateTranslation()
 
         if (!lsqUnit()->enablePredTLB &&
             !_reqs.back()->isDoneDecryptingPointer()) {
+            return;
+        }
+
+        if (_inst->isStore() && !_reqs.back()->isDoneDecryptingPointer()) {
             return;
         }
 
