@@ -116,6 +116,7 @@ CPU::CPU(const BaseO3CPUParams &params)
       pointerDecryptionDelay(params.pointer_decryption_delay),
       dataKeystreamDelay(params.data_keystream_delay),
       enablePredTLB(params.enablePredTLB),
+      forceCryptoDelay(params.forceCryptoDelay),
       cpuStats(this)
 {
     cryptoModule = CCPointerEncoding();
@@ -1611,6 +1612,9 @@ CPU::pushRequest(const DynInstPtr& inst, bool isLoad, uint8_t *data,
         // if size is 0 or -1, we're accessing an LA.
         // otherwise, mark this pointer as a CA
         bool isEncoded = !((addr_size == 0) || (addr_size == 0b111111));
+        // If forceCryptoDelay enabled, consider all accesses are CA-based
+        // Therefore, apply crypto delay to all memory accesses
+        isEncoded |= forceCryptoDelay;
         inst->encodedPointer(isEncoded);
         inst->pointerDecoded = !isEncoded;
         // Store the original address for reference

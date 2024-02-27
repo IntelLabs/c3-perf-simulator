@@ -150,9 +150,12 @@ class BaseCPU(ClockedObject):
         "0Hz", "frequency to print out the progress message"
     )
 
-    pointer_decryption_delay = Param.Unsigned(3, "C3 ptrdec delay")
-    data_keystream_delay = Param.Unsigned(4, "C3 data keystream delay")
-    enablePredTLB = Param.Bool(False, "Enable C3 PredTLB")  # yh+
+    pointer_decryption_delay = Param.Unsigned(0, "C3 ptrdec delay")
+    data_keystream_delay = Param.Unsigned(0, "C3 data keystream delay")
+    enablePredTLB = Param.Bool(False, "Enable C3 PredTLB")
+    forceCryptoDelay = Param.Bool(
+        False, "Force crypto delay to all memory accesses"
+    )
 
     switched_out = Param.Bool(
         False,

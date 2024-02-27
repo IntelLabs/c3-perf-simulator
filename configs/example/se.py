@@ -262,6 +262,9 @@ for i in range(np):
     if args.enablePredTLB:
         system.cpu[i].enablePredTLB = args.enablePredTLB
 
+    if args.forceCryptoDelay:
+        system.cpu[i].forceCryptoDelay = args.forceCryptoDelay
+
     system.cpu[i].createThreads()
 
 if args.ruby:

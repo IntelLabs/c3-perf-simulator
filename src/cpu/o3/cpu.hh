@@ -548,7 +548,9 @@ class CPU : public BaseCPU
 
     uint32_t dataKeystreamDelay;
 
-    bool enablePredTLB; //yh+
+    bool enablePredTLB;
+
+    bool forceCryptoDelay;
 
     /** The cycle that the CPU was last activated by a new thread*/
     Tick lastActivatedCycle;

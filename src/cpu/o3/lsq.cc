@@ -1070,7 +1070,7 @@ LSQ::SplitDataRequest::initiateTranslation()
                 _inst->pcState().instAddr(), _inst->contextId());
     _mainReq->setByteEnable(_byteEnable);
 
-     // How long will this request take to do pointer decryption?
+    // How long will this request take to do pointer decryption?
     bool is_crypto = _inst->encodedPointer();
     _mainReq->setPointerDecryptionTimer(is_crypto? PTR_DECRYPTION_DELAY : 0);
 
@@ -1277,8 +1277,6 @@ LSQ::LSQRequest::sendFragmentToTranslation(int i)
         DPRINTF(C3DEBUG, "got %x.\n", req(i)->_vaddr);
 
         // Exactly once per CA inst, check if PredTLB would be correct.
-        // Comment this out to disable PredTLB.
-        // TODO: add a flag to disable/enable PredTLB
         if (lsqUnit()->enablePredTLB) {
             predTLBCorrect = _port.getMMUPtr()->doesPredTLBSucceed(
                     req(i), _inst->thread->getTC(),

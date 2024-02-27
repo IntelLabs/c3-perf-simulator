@@ -728,6 +728,12 @@ def addSEOptions(parser):
         default=False,
         help="""Enable C3 PredTLB.""",
     )
+    parser.add_argument(
+        "--forceCryptoDelay",
+        action="store_true",
+        default=False,
+        help="""Force crypto delay to all memory accesses.""",
+    )
 
     # Run duration options
     parser.add_argument(
