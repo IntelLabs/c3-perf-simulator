@@ -1,6 +1,6 @@
 This is an experimental performance simulator for Cryptographic Capability Computing (C3).
 
-Clone this repository with --recurse-submodules - otherwise, many tests will not build.
+NOTE: If NOT running gem5 inside the provided docker, clone this repository with --recurse-submodules - otherwise, many tests will not build.
 
 To build, run, and test the simulator inside a controlled Docker environment, follow the following steps:
 1.  Run build_docker.sh 
@@ -15,7 +15,12 @@ To build, run, and test the simulator inside a controlled Docker environment, fo
       RUN3:	C3, Heap addresses encryption	, PredTLB
       RUN4:	C3, All addresses encryption	, PredTLB
 
-The Docker image will have an operational copy of gem5 and can be used for further testing and demonstration as required.
+The Docker image will have an operational copy of C3 gem5 and can be used for further testing and demonstration as required.
+
+To run the standard tests, follow the steps below:
+1.  CMD:  cd tests/c3_tests
+2.  CMD:  yes | make test
+    This will build gem5 and the custom GLIBC (both already built inside the docker) and run our basic tests.
 
 ---
 
