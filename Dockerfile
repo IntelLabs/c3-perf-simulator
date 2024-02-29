@@ -49,48 +49,48 @@ RUN apt-get update && apt-get upgrade -y \
     dbus-x11 \
     openssh-server \
     xterm \
-	m4 \
-	patchelf \
-	scons \
-	zlib1g \
-	zlib1g-dev \
-	libprotobuf-dev \
-	protobuf-compiler \
-	python3-dev \
-	libgoogle-perftools-dev \
-	libprotoc-dev \
-	python-is-python3 \
-	libboost-all-dev \
-	libhdf5-serial-dev \
-	python3-pydot \
-	libpng-dev \
-	pkg-config \
-	python3-venv \
-	black \
-	cmake \
+    m4 \
+    patchelf \
+    scons \
+    zlib1g \
+    zlib1g-dev \
+    libprotobuf-dev \
+    protobuf-compiler \
+    python3-dev \
+    libgoogle-perftools-dev \
+    libprotoc-dev \
+    python-is-python3 \
+    libboost-all-dev \
+    libhdf5-serial-dev \
+    python3-pydot \
+    libpng-dev \
+    pkg-config \
+    python3-venv \
+    black \
+    cmake \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
 RUN pip3 install --no-cache-dir\
     cpplint \
     pre-commit \
-	mypy \
-	pytest-testdox \
+    mypy \
+    pytest-testdox \
     pytest-xdist
 
 WORKDIR $C3_GEM5_DIR
 COPY . .
 RUN git clone https://github.com/IntelLabs/c3-simulator && \
-	cd $C3_GLIBC_DIR && \
-	git clone -b glibc-nowrap https://github.com/IntelLabs/c3-glibc src && \
-	cd $C3_GEM5_DIR
+    cd $C3_GLIBC_DIR && \
+    git clone -b glibc-nowrap https://github.com/IntelLabs/c3-glibc src && \
+    cd $C3_GEM5_DIR
 
 RUN (yes || true) | scons build/X86/gem5.opt -j8
 
 RUN cd $C3_GLIBC_DIR && ./make_glibc.sh
 
 RUN cd $C3_GEM5_DIR/tests/c3_tests && \
-	git clone https://github.com/embecosm/mibench.git && \
-	cd mibench && \
-	git checkout 0f3cbcf && \
-	cd $C3_GEM5_DIR 
+    git clone https://github.com/embecosm/mibench.git && \
+    cd mibench && \
+    git checkout 0f3cbcf && \
+    cd $C3_GEM5_DIR 
