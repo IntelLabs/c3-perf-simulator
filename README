@@ -2,6 +2,24 @@ This is an experimental performance simulator for Cryptographic Capability Compu
 
 If not copying ZIPs of other deliverables, make sure to clone this repository with --recurse-submodules - otherwise, many tests will not build.
 
+### Assembling simulator from downloaded ZIP files
+
+If using Docker to run and test the simulator, follow the following steps:
+1.	Run build_docker.sh 
+	This script builds the c3-gem5-docker docker image, which has a copy of the gem5 source code and the run_blowfish test script.
+	Once the docker image is built, a container will be spawned and the shell will be transferred to the running container.
+2.	Run run_blowfish.sh inside the docker container
+	This script builds the blowfish test and runs it in inside gem5 in five configurations. The results are then summarized for comparison.
+	The configurations are as listed:
+    	RUN0:	No C3
+        RUN1:	C3, Heap addresses encryption	, No PredTLB
+        RUN2:	C3, All addresses encryption	, No PredTLB
+        RUN3:	C3, Heap addresses encryption	, PredTLB
+        RUN4:	C3, All addresses encryption	, PredTLB
+
+The docker image will have an operational copy of gem5 and can be used for further testing and demonstration as required.
+
+
 Otherwise, when assembling the simulator from downloaded ZIP files, do the following:
 
 1. Unzip `harden-p1-d1-c3-simulator.zip` and copy its root directory's contents to `c3-simulator/` in this directory.
