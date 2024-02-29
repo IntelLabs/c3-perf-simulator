@@ -734,6 +734,12 @@ def addSEOptions(parser):
         default=False,
         help="""Force crypto delay to all memory accesses.""",
     )
+    parser.add_argument(
+        "--enableCryptoFunctionality",
+        action="store_true",
+        default=False,
+        help="""Actually do data and pointer encryption for CAs.""",
+    )
 
     # Run duration options
     parser.add_argument(

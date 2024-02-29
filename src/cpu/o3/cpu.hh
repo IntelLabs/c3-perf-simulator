@@ -552,6 +552,8 @@ class CPU : public BaseCPU
 
     bool forceCryptoDelay;
 
+    bool enableCryptoFunctionality;
+
     /** The cycle that the CPU was last activated by a new thread*/
     Tick lastActivatedCycle;
 

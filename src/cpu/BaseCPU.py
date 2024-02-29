@@ -156,6 +156,9 @@ class BaseCPU(ClockedObject):
     forceCryptoDelay = Param.Bool(
         False, "Force crypto delay to all memory accesses"
     )
+    enableCryptoFunctionality = Param.Bool(
+        False, "Actually do pointer/data encryption"
+    )
 
     switched_out = Param.Bool(
         False,

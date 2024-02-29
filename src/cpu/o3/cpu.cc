@@ -117,9 +117,11 @@ CPU::CPU(const BaseO3CPUParams &params)
       dataKeystreamDelay(params.data_keystream_delay),
       enablePredTLB(params.enablePredTLB),
       forceCryptoDelay(params.forceCryptoDelay),
+      enableCryptoFunctionality(params.enableCryptoFunctionality),
       cpuStats(this)
 {
     cryptoModule = CCPointerEncoding();
+    cryptoModule.isSimplified = !enableCryptoFunctionality;
     cryptoModule.init_pointer_key(addr_key_.bytes_, addr_key_.size_);
 
     fatal_if(FullSystem && params.numThreads > 1,

@@ -50,7 +50,7 @@ dataEncDec:
 	cd ../..; \
 	scons build/X86/gem5.opt -j$$((`nproc`+1))
 
-test: build hello_c3ctest dataEncDec dataEncDec_c3ctest mibench/security/blowfish/bf
+test: build hello_c3ctest dataEncDec_c3ctest mibench/security/blowfish/bf
 	pytest .
 
 clean:

@@ -265,6 +265,11 @@ for i in range(np):
     if args.forceCryptoDelay:
         system.cpu[i].forceCryptoDelay = args.forceCryptoDelay
 
+    if args.enableCryptoFunctionality:
+        system.cpu[
+            i
+        ].enableCryptoFunctionality = args.enableCryptoFunctionality
+
     system.cpu[i].createThreads()
 
 if args.ruby:
