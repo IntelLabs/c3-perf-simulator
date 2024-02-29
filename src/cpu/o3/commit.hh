@@ -483,6 +483,8 @@ class Commit
 
         /** Total number of instructions committed. */
         statistics::Vector instsCommitted;
+        /** Total number of fcnts committed. */
+        statistics::Vector fcntsCommitted;
         /** Total number of ops (including micro ops) committed. */
         statistics::Vector opsCommitted;
         /** Stat for the total number of committed memory references. */

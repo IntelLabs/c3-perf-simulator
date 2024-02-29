@@ -548,6 +548,12 @@ class CPU : public BaseCPU
 
     uint32_t dataKeystreamDelay;
 
+    bool enablePredTLB;
+
+    bool forceCryptoDelay;
+
+    bool enableCryptoFunctionality;
+
     /** The cycle that the CPU was last activated by a new thread*/
     Tick lastActivatedCycle;
 
@@ -591,6 +597,10 @@ class CPU : public BaseCPU
         statistics::Scalar quiesceCycles;
         /** Stat for the number of committed instructions per thread. */
         statistics::Vector committedInsts;
+        //yh+begin
+        /** Stat for the number of committed fcnts per thread. */
+        statistics::Vector committedFcnts;
+        //yh+end
         /** Stat for the number of committed ops (including micro ops) per
          *  thread. */
         statistics::Vector committedOps;

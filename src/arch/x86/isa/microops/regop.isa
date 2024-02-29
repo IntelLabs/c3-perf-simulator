@@ -462,9 +462,32 @@ let {{
 
     class CcEncPtr(FlagRegOp):
         code = '''
-result = xc->tcBase()->getCpuPtr()->cryptoModule.encode_pointer(PSrcReg1, op2);
-DestReg = merge(DestReg, dest, result, dataSize);  // hope this works!
-    '''
+            result =
+            xc->tcBase()->getCpuPtr()->
+            cryptoModule.encode_pointer(PSrcReg1, op2);
+            DestReg =
+            merge(DestReg, dest, result, dataSize);  // hope this works!
+        '''
+        op_class = "C3PointerEncOp"
+
+    class CcDecPtr(FlagRegOp):
+        code = '''
+            result =
+            xc->tcBase()->getCpuPtr()->
+            cryptoModule.decode_pointer(PSrcReg1);
+            DestReg =
+            merge(DestReg, dest, result, dataSize);  // hope this works!
+        '''
+        op_class = "C3PointerDecOp"
+
+    class Fcnt(FlagRegOp):
+        code = '''
+            result =
+            xc->tcBase()->getCpuPtr()->
+            cryptoModule.fcnt_fake_dep(PSrcReg1, op2);
+            DestReg =
+            merge(DestReg, dest, result, dataSize);  // hope this works!
+        '''
 
     class Add(FlagRegOp):
         code = '''

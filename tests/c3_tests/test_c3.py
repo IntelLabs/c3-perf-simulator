@@ -10,7 +10,7 @@ icelake_config = "--cpu-type=O3_X86_icelake_1 --caches"
 safeside_dir = ""
 stats_file = "../../m5out/stats.txt"
 DATA_KEYSTREAM_GENERATION_DELAY = 4
-useC3 = lambda b: "-e c3_enable.env" if b else ""
+useC3 = lambda b: "-e c3_no_wrap_enable.env" if b else ""
 
 
 """
@@ -21,6 +21,7 @@ This file tests the actual functionality of C3.
 @pytest.mark.it(
     "c3_tests/hello_c3 works -- so ccptrenc gets executed and pointer decryption works"
 )
+@pytest.mark.skip(reason="Pointer encryption disabled in this release")
 def test_ccptrenc():
     gem5_cmd = " ".join(
         [
@@ -70,6 +71,7 @@ def test_dataEncDec_Basic():
 @pytest.mark.it(
     "c3_tests/dataEncDec works -- Data Encryption/Decryption Advanced Unit Test (Includes Mixture of CAs and LAs)."
 )
+@pytest.mark.skip(reason="Build problems due to GLIBC changes")
 def test_dataEncDec_Advanced():
     gem5_cmd = " ".join(
         [

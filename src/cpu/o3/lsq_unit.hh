@@ -97,8 +97,10 @@ class LSQUnit
       private:
         /** The instruction. */
         DynInstPtr _inst;
+      public:
         /** The request. */
         LSQRequest* _request = nullptr;
+      private:
         /** The size of the operation. */
         uint32_t _size = 0;
         /** Valid entry. */
@@ -518,6 +520,9 @@ class LSQUnit
     /** Flag for memory model. */
     bool needsTSO;
 
+  public:
+    bool enablePredTLB;
+
   protected:
     // Will also need how many read/write ports the Dcache has.  Or keep track
     // of that in stage that is one level up, and only call executeLoad/Store
@@ -554,12 +559,17 @@ class LSQUnit
         /** Number of CA loads that were rescheduled. */
         statistics::Scalar rescheduledLoadsCA;
 
+        /** Number of bad store-load forwarding occurrences */
+        statistics::Scalar lsForwMismatches;
+
         /** Number of times the LSQ is blocked due to the cache. */
         statistics::Scalar blockedByCache;
 
         /** Distribution of cycle latency between the first time a load
          * is issued and its completion */
         statistics::Distribution loadToUse;
+
+        statistics::Distribution cryptoLoadToUse;
     } stats;
 
   public:

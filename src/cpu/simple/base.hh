@@ -136,6 +136,7 @@ class BaseSimpleCPU : public BaseCPU
     void checkForInterrupts();
     void setupFetchRequest(const RequestPtr &req);
     void serviceInstCountEvents();
+    void serviceFcntCountEvents();
     void preExecute();
     void postExecute();
     void advancePC(const Fault &fault);

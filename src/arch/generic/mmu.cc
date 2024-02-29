@@ -114,6 +114,14 @@ BaseMMU::translateTiming(const RequestPtr &req, ThreadContext *tc,
     return getTlb(mode)->translateTiming(req, tc, translation, mode);
 }
 
+bool
+BaseMMU::doesPredTLBSucceed(const RequestPtr& req, ThreadContext* tc,
+                        BaseMMU::Translation* translation, BaseMMU::Mode mode)
+{
+    return getTlb(mode)->doesPredTLBSucceed(req, tc, translation, mode);
+    //panic("BaseMMU::doesPredTLBHit must be overridden!\n");
+}
+
 Fault
 BaseMMU::translateFunctional(const RequestPtr &req, ThreadContext *tc,
                              BaseMMU::Mode mode)

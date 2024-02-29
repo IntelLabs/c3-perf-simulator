@@ -323,7 +323,8 @@ TLB::finalizePhysical(const RequestPtr &req,
 Fault
 TLB::translate(const RequestPtr &req,
         ThreadContext *tc, BaseMMU::Translation *translation,
-        BaseMMU::Mode mode, bool &delayedResponse, bool timing)
+        BaseMMU::Mode mode, bool &delayedResponse, bool timing,
+        bool fake)
 {
     Request::Flags flags = req->getFlags();
     int seg = flags & SegmentFlagMask;
@@ -331,8 +332,7 @@ TLB::translate(const RequestPtr &req,
 
     delayedResponse = false;
 
-
-    bool is_predictive = false;
+    bool is_predictive = fake;
 
     // If this is true, we're dealing with a request to a non-memory address
     // space.
@@ -427,20 +427,33 @@ TLB::translate(const RequestPtr &req,
             // have no effect on the TLB state.
 
             TlbEntry* pred_entry = lookup(pageAlignedVaddr, false, true);
-            TlbEntry* entry = lookup(pageAlignedVaddr, true, is_predictive);
+            // only update on a real lookup
+            TlbEntry* entry = lookup(pageAlignedVaddr, !fake, false);
 
-            // sanity check: make sure the req has finished ptr decryption
-            assert(req->isDoneDecryptingPointer());
+            if (fake) {
+                // this is a bit of a hack -- store (pred_entry == entry)
+                // in delayedResponse. It's not used yet anyway.
+                if (pred_entry && entry) {
+                    if (pred_entry->vaddr == entry->vaddr) {
+                        delayedResponse = true;
+                    }
+                }
+                // Then just exit the function -- don't touch the TLB.
+                return NoFault;
+            }
 
-            if (entry && !is_predictive) {
+            if (entry) {
                 // assumption: one entry (ptr) per page-aligned vaddr.
                 // If this implementation is correct, any real TLB
                 // hit must also be a PredTLB hit (though maybe
                 // an incorrect PredTLB hit)
+                if (!pred_entry) {
+                    panic("Found entry %p, no pred entry, fake=%d\n",
+                    entry, fake);
+                }
                 assert(pred_entry);
                 if (pred_entry == entry) {
                     if (req->_isCrypto) {
-                        // (note: with PredTLB enabled, this is dead code)
                         if (mode == BaseMMU::Read)
                             stats.cryptoReadPredTLBCorrect++;
                         else
@@ -455,6 +468,9 @@ TLB::translate(const RequestPtr &req,
                 }
             }
 
+            // by construction, the ONLY pred read accesses are crypto
+            // TODO: fix the stats...
+
             if (mode == BaseMMU::Read) {
                 if (is_predictive)
                     stats.predRdAccesses++;
@@ -468,6 +484,7 @@ TLB::translate(const RequestPtr &req,
                     stats.cryptoWrAccesses++;
                 stats.wrAccesses++;
             }
+
             if (!entry) {
                 DPRINTF(TLB, "Handling a TLB miss for "
                         "address %#x at pc %#x.\n",
@@ -554,7 +571,7 @@ TLB::translateAtomic(const RequestPtr &req, ThreadContext *tc,
     BaseMMU::Mode mode)
 {
     bool delayedResponse;
-    return TLB::translate(req, tc, NULL, mode, delayedResponse, false);
+    return TLB::translate(req, tc, NULL, mode, delayedResponse, false, false);
 }
 
 Fault
@@ -599,11 +616,23 @@ TLB::translateTiming(const RequestPtr &req, ThreadContext *tc,
     bool delayedResponse;
     assert(translation);
     Fault fault =
-        TLB::translate(req, tc, translation, mode, delayedResponse, true);
+      TLB::translate(req, tc, translation, mode, delayedResponse, true, false);
     if (!delayedResponse)
         translation->finish(fault, req, tc, mode);
     else
         translation->markDelayed();
+}
+
+bool
+TLB::doesPredTLBSucceed(const RequestPtr& req, ThreadContext* tc,
+    BaseMMU::Translation* translation, BaseMMU::Mode mode)
+{
+    bool predTLBMatches;
+    (void) TLB::translate(req, tc, translation, mode, predTLBMatches,
+      false, true);
+    DPRINTF(TLB, "Req to addr %x. Good prediction: %d. Crypto: %d.\n",
+    req->_vaddr, predTLBMatches, req->_isCrypto);
+    return predTLBMatches;
 }
 
 Walker *

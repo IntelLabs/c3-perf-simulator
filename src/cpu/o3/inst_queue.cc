@@ -1141,7 +1141,7 @@ InstructionQueue::getDeferredMemInstToExecute()
          ++it) {
         if (
             (*it)->isSquashed() ||
-            (!(*it)->hasLA()) ||  //
+            ((*it)->encodedPointer() && (*it)->hasLA()) ||
             ((*it)->translationCompleted())
             )
         {

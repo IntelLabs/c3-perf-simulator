@@ -876,6 +876,15 @@ Execute::doInstCommitAccounting(MinorDynInstPtr inst)
 
         /* Act on events related to instruction counts */
         thread->comInstEventQueue.serviceEvents(thread->numInst);
+
+        if (inst->isFcnt()) {
+            thread->numFcnt++;
+            thread->threadStats.numFcnts++;
+            cpu.stats.numFcnts++;
+
+            /* Act on events related to fcnt counts */
+            thread->comFcntEventQueue.serviceEvents(thread->numFcnt);
+        }
     }
     thread->numOp++;
     thread->threadStats.numOps++;

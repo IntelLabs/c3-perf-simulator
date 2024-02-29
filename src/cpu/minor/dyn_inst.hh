@@ -256,6 +256,9 @@ class MinorDynInst : public RefCounted
     /** Is this a real instruction */
     bool isInst() const { return !isBubble() && !isFault(); }
 
+    /** Is this a fcnt */
+    bool isFcnt() const { return staticInst->isFcnt(); }
+
     /** Is this a real mem ref instruction */
     bool isMemRef() const { return isInst() && staticInst->isMemRef(); }
 

@@ -363,6 +363,8 @@ AtomicSimpleCPU::readMem(Addr addr, uint8_t *data, unsigned size,
                          Request::Flags flags,
                          const std::vector<bool> &byte_enable)
 {
+    //FIXME: instead of naive LAM support, apply c3 ptr decryption
+    addr = (Addr) (((uint64_t) addr << 16) >> 16);
     SimpleExecContext &t_info = *threadInfo[curThread];
     SimpleThread *thread = t_info.thread;
 
@@ -441,6 +443,8 @@ AtomicSimpleCPU::writeMem(uint8_t *data, unsigned size, Addr addr,
                           Request::Flags flags, uint64_t *res,
                           const std::vector<bool>& byte_enable)
 {
+    //FIXME: instead of naive LAM support, apply c3 ptr decryption
+    addr = (Addr) (((uint64_t) addr << 16) >> 16);
     SimpleExecContext &t_info = *threadInfo[curThread];
     SimpleThread *thread = t_info.thread;
     static uint8_t zero_array[64] = {};
@@ -649,6 +653,8 @@ AtomicSimpleCPU::tick()
         }
 
         serviceInstCountEvents();
+
+        serviceFcntCountEvents();
 
         Fault fault = NoFault;
 

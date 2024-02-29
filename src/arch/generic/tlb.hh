@@ -80,6 +80,12 @@ class BaseTLB : public SimObject
     {
         panic("Not implemented.\n");
     }
+    virtual bool doesPredTLBSucceed(const RequestPtr& req, ThreadContext* tc,
+                        BaseMMU::Translation* translation, BaseMMU::Mode mode)
+    {
+        panic("Base doesPredTLBSucceed Not implemented!\n");
+    }
+
 
     /**
      * Do post-translation physical address finalization.

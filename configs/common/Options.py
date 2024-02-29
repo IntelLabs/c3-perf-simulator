@@ -723,6 +723,34 @@ def addSEOptions(parser):
         help="Number of cycles to generate the data " "keystream for a CA.",
     )
     parser.add_argument(
+        "--enablePredTLB",
+        action="store_true",
+        default=False,
+        help="""Enable C3 PredTLB.""",
+    )
+    parser.add_argument(
+        "--forceCryptoDelay",
+        action="store_true",
+        default=False,
+        help="""Force crypto delay to all memory accesses.""",
+    )
+    parser.add_argument(
+        "--enableCryptoFunctionality",
+        action="store_true",
+        default=False,
+        help="""Actually do data and pointer encryption for CAs.""",
+    )
+
+    # Run duration options
+    parser.add_argument(
+        "--maxfcnts",
+        action="store",
+        type=int,
+        default=None,
+        help="""Total number of fcnts to
+                                            simulate (default: run forever)""",
+    )
+    parser.add_argument(
         "--chroot",
         action="store",
         type=str,

@@ -500,6 +500,10 @@ def run(options, root, testsys, cpu_class):
         for i in range(np):
             testsys.cpu[i].max_insts_any_thread = options.maxinsts
 
+    if options.maxfcnts:
+        for i in range(np):
+            testsys.cpu[i].max_fcnts_any_thread = options.maxfcnts
+
     if options.override_vendor_string is not None:
         for i in range(len(testsys.cpu)):
             for j in range(len(testsys.cpu[i].isa)):
@@ -523,6 +527,11 @@ def run(options, root, testsys, cpu_class):
             # simulation period
             if options.maxinsts:
                 switch_cpus[i].max_insts_any_thread = options.maxinsts
+            # yh+begin
+            # simulation period
+            if options.maxfcnts:
+                switch_cpus[i].max_fcnts_any_thread = options.maxfcnts
+            # yh+end
             # Add checker cpu if selected
             if options.checker:
                 switch_cpus[i].addCheckerCpu()
@@ -567,6 +576,10 @@ def run(options, root, testsys, cpu_class):
 
             if options.maxinsts:
                 repeat_switch_cpus[i].max_insts_any_thread = options.maxinsts
+            # yh+begin
+            if options.maxfcnts:
+                repeat_switch_cpus[i].max_fcnts_any_thread = options.maxfcnts
+            # yh+end
 
             if options.checker:
                 repeat_switch_cpus[i].addCheckerCpu()
@@ -626,6 +639,11 @@ def run(options, root, testsys, cpu_class):
             # simulation period
             if options.maxinsts:
                 switch_cpus_1[i].max_insts_any_thread = options.maxinsts
+            # yh+begin
+            # simulation period
+            if options.maxfcnts:
+                switch_cpus_1[i].max_fcnts_any_thread = options.maxfcnts
+            # yh+end
 
             # attach the checker cpu if selected
             if options.checker:

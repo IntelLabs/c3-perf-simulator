@@ -72,6 +72,7 @@ class SimpleExecContext : public ExecContext
 
     /** PER-THREAD STATS */
     Counter numInst;
+    Counter numFcnt;
     Counter numOp;
     // Number of simulated loads
     Counter numLoad;
@@ -88,6 +89,8 @@ class SimpleExecContext : public ExecContext
                                     thread->threadId()).c_str()),
               ADD_STAT(numInsts, statistics::units::Count::get(),
                        "Number of instructions committed"),
+              ADD_STAT(numFcnts, statistics::units::Count::get(),
+                       "Number of fcnts committed"),
               ADD_STAT(numOps, statistics::units::Count::get(),
                        "Number of ops (including micro ops) committed"),
               ADD_STAT(numIntAluAccesses, statistics::units::Count::get(),
@@ -209,6 +212,10 @@ class SimpleExecContext : public ExecContext
 
         // Number of simulated instructions
         statistics::Scalar numInsts;
+
+        // Number of simulated fcnts
+        statistics::Scalar numFcnts;
+
         statistics::Scalar numOps;
 
         // Number of integer alu accesses
@@ -301,7 +308,7 @@ class SimpleExecContext : public ExecContext
     /** Constructor */
     SimpleExecContext(BaseSimpleCPU* _cpu, SimpleThread* _thread)
         : cpu(_cpu), thread(_thread), fetchOffset(0), stayAtPC(false),
-        numInst(0), numOp(0), numLoad(0), lastIcacheStall(0),
+        numInst(0), numFcnt(0), numOp(0), numLoad(0), lastIcacheStall(0),
         lastDcacheStall(0), execContextStats(cpu, thread)
     { }
 

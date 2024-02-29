@@ -148,6 +148,8 @@ let {{
             self.function_call = True
         def function_return(self):
             self.function_return = True
+        def function_count(self):
+            self.function_count = True
         def control_direct(self):
             self.control_direct = True
         def control_indirect(self):
@@ -163,6 +165,7 @@ let {{
                 "serialize_after" : self.serializeAfter,
                 "function_call" : self.function_call,
                 "function_return" : self.function_return,
+                "function_count" : self.function_count,
                 "control_direct" : self.control_direct,
                 "control_indirect" : self.control_indirect
             }
@@ -183,6 +186,7 @@ let {{
             self.serialize_after = False
             self.function_call = False
             self.function_return = False
+            self.function_count = False
             self.control_direct = False
             self.control_indirect = False
 
@@ -240,6 +244,9 @@ let {{
                 else:
                     flags.append("IsDelayedCommit")
 
+                if self.function_count:
+                    flags.append("IsFcnt")
+
                 allocMicroops += \
                     "microops[%d] = %s;\n" % \
                     (micropc, op.getAllocator(flags))
@@ -252,6 +259,7 @@ let {{
                 memoryInst = "true"
             else:
                 memoryInst = "false"
+
             regSize = '''(%s || (env.base == int_reg::Rsp && %s) ?
                          env.stackSize :
                          env.dataSize)''' % (useStackSize, memoryInst)

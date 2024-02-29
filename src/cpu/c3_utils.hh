@@ -81,7 +81,7 @@ class CCPointerEncoding
  public:
     CCPointerEncoding() = default;
     virtual inline ~CCPointerEncoding() = default;
-
+    bool isSimplified = false;
     /**
      * @brief Encrypt an already decorated CA
      *
@@ -170,8 +170,14 @@ class CCPointerEncoding
      * @return uint64_t
      */
     virtual inline uint64_t decode_pointer(uint64_t encoded_pointer) {
-        return undecorate_ptr(decrypt_ptr({.uint64_ = encoded_pointer}))
-                .uint64_;
+        if (isSimplified) {
+            // For simplification, pointer encryption sets bit-62
+            // As such, pointer decryption just clears bit-62
+            return (encoded_pointer & ~((uint64_t) 0x1 << 62));
+        } else {
+            return undecorate_ptr(decrypt_ptr({.uint64_ = encoded_pointer}))
+                   .uint64_;
+        }
     }
 
     /**
@@ -186,12 +192,20 @@ class CCPointerEncoding
      */
     virtual inline uint64_t encode_pointer(uint64_t pointer,
                                            uint64_t ptr_metadata_int) {
+    if (isSimplified) {
+        // For simplification, pointer encryption sets bit-62
+        return (pointer | ((uint64_t) 0x1 << 62));
+    } else {
         ptr_metadata_t ptr_metadata = {.uint64_ = ptr_metadata_int};
-        // BOY I hope this doesn't get freed until the function ends
-        // (it really oughtn't anyways.)
         return encrypt_ptr(decorate_ptr({.uint64_ = pointer}, &ptr_metadata),
-                           &ptr_metadata)
-                .uint64_;
+                        &ptr_metadata)
+            .uint64_;
+    }
+    }
+
+    virtual inline uint64_t fcnt_fake_dep(uint64_t pointer,
+                                        uint64_t ptr_metadata_int) {
+        return pointer;
     }
 
     static inline void get_countermode_mask(ptr_metadata_t *metadata,

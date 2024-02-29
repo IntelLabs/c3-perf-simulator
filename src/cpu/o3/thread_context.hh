@@ -97,6 +97,22 @@ class ThreadContext : public gem5::ThreadContext
         return thread->comInstEventQueue.getCurTick();
     }
 
+    void
+    scheduleFcntCountEvent(Event *event, Tick count) override
+    {
+        thread->comFcntEventQueue.schedule(event, count);
+    }
+    void
+    descheduleFcntCountEvent(Event *event) override
+    {
+        thread->comFcntEventQueue.deschedule(event);
+    }
+    Tick
+    getCurrentFcntCount() override
+    {
+        return thread->comFcntEventQueue.getCurTick();
+    }
+
     /** Pointer to the thread state that this TC corrseponds to. */
     ThreadState *thread;
 

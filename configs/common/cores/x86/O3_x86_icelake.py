@@ -5,6 +5,16 @@
 
 from m5.objects import *
 
+
+# C3 instructions
+class O3_X86_icelake_C3PointerCrypto(FUDesc):
+    opList = [
+        OpDesc(opClass="C3PointerEnc", opLat=6, pipelined=True),
+        OpDesc(opClass="C3PointerDec", opLat=3, pipelined=True),
+    ]
+    count = 1
+
+
 # Simple ALU Instructions
 class O3_X86_icelake_Simple_Int(FUDesc):
     opList = [OpDesc(opClass="IntAlu", opLat=1)]
@@ -209,3 +219,134 @@ class O3_X86_icelakeL3(Cache):
     clusivity = "mostly_excl"
     tags = BaseSetAssoc()
     repl_policy = RandomRP()
+
+
+# C3 instructions
+class O3_X86_icelake_C3PointerCrypto_base(FUDesc):
+    opList = [
+        OpDesc(opClass="C3PointerEnc", opLat=1, pipelined=True),
+        OpDesc(opClass="C3PointerDec", opLat=1, pipelined=True),
+    ]
+    count = 1
+
+
+# C3 instructions
+class O3_X86_icelake_C3PointerCrypto_c3(FUDesc):
+    opList = [
+        OpDesc(opClass="C3PointerEnc", opLat=6, pipelined=True),
+        OpDesc(opClass="C3PointerDec", opLat=3, pipelined=True),
+    ]
+    count = 1
+
+
+# Functional Units
+class O3_X86_icelake_FUP_base(FUPool):
+    FUList = [
+        O3_X86_icelake_Simple_Int(),
+        O3_X86_icelake_Complex_Int(),
+        O3_X86_icelake_Load(),
+        O3_X86_icelake_Store(),
+        O3_X86_icelake_FP(),
+        O3_X86_icelake_C3PointerCrypto_base(),
+    ]
+
+
+class O3_X86_icelake_FUP_c3(FUPool):
+    FUList = [
+        O3_X86_icelake_Simple_Int(),
+        O3_X86_icelake_Complex_Int(),
+        O3_X86_icelake_Load(),
+        O3_X86_icelake_Store(),
+        O3_X86_icelake_FP(),
+        O3_X86_icelake_C3PointerCrypto_c3(),
+    ]
+
+
+class O3_X86_icelake_base(DerivO3CPU):
+    LQEntries = 128
+    SQEntries = 72
+    LSQDepCheckShift = 0
+    LFSTSize = 1024
+    SSITSize = 1024
+    decodeToFetchDelay = 1
+    renameToFetchDelay = 1
+    iewToFetchDelay = 1
+    commitToFetchDelay = 1
+    renameToDecodeDelay = 1
+    iewToDecodeDelay = 1
+    commitToDecodeDelay = 1
+    iewToRenameDelay = 1
+    commitToRenameDelay = 1
+    commitToIEWDelay = 1
+    fetchWidth = 6
+    fetchBufferSize = 16
+    fetchQueueSize = 70
+    fetchToDecodeDelay = 3
+    decodeWidth = 6
+    decodeToRenameDelay = 2
+    renameWidth = 10
+    renameToIEWDelay = 1
+    issueToExecuteDelay = 1
+    dispatchWidth = 10
+    issueWidth = 10
+    wbWidth = 10
+    fuPool = O3_X86_icelake_FUP_base()
+    iewToCommitDelay = 1
+    renameToROBDelay = 1
+    commitWidth = 10
+    squashWidth = 10
+    trapLatency = 13
+    backComSize = 10
+    forwardComSize = 10
+    numPhysIntRegs = 988
+    numPhysFloatRegs = 288
+    numPhysVecRegs = 288
+    numIQEntries = 168
+    numROBEntries = 384
+    switched_out = False
+    branchPred = O3_X86_icelake_BP()
+
+
+class O3_X86_icelake_c3(DerivO3CPU):
+    LQEntries = 128
+    SQEntries = 72
+    LSQDepCheckShift = 0
+    LFSTSize = 1024
+    SSITSize = 1024
+    decodeToFetchDelay = 1
+    renameToFetchDelay = 1
+    iewToFetchDelay = 1
+    commitToFetchDelay = 1
+    renameToDecodeDelay = 1
+    iewToDecodeDelay = 1
+    commitToDecodeDelay = 1
+    iewToRenameDelay = 1
+    commitToRenameDelay = 1
+    commitToIEWDelay = 1
+    fetchWidth = 6
+    fetchBufferSize = 16
+    fetchQueueSize = 70
+    fetchToDecodeDelay = 3
+    decodeWidth = 6
+    decodeToRenameDelay = 2
+    renameWidth = 10
+    renameToIEWDelay = 1
+    issueToExecuteDelay = 1
+    dispatchWidth = 10
+    issueWidth = 10
+    wbWidth = 10
+    fuPool = O3_X86_icelake_FUP_c3()
+    iewToCommitDelay = 1
+    renameToROBDelay = 1
+    commitWidth = 10
+    squashWidth = 10
+    trapLatency = 13
+    backComSize = 10
+    forwardComSize = 10
+    numPhysIntRegs = 988
+    numPhysFloatRegs = 288
+    numPhysVecRegs = 288
+    numIQEntries = 168
+    numROBEntries = 384
+    switched_out = False
+    branchPred = O3_X86_icelake_BP()

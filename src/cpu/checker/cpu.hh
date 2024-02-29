@@ -140,6 +140,10 @@ class CheckerCPU : public BaseCPU, public ExecContext
 
     // number of simulated instructions
     Counter numInst;
+
+    // number of simulated fcnts
+    Counter numFcnt;
+
     Counter startNumInst;
 
     std::queue<int> miscRegIdxs;

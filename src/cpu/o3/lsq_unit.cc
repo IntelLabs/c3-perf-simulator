@@ -182,19 +182,28 @@ LSQUnit::completeDataAccess(PacketPtr pkt)
             }
 
             // Data Decryption functionality
-            unsigned size_pkt = pkt->getSize();
-            uint8_t *data_pkt = pkt->data;
-            uint8_t bytes_buffer[64];
-            ptr_metadata_t cc_metadata = {0};
-            uint64_t data_tweak = request->_inst->_encoded_la;
-            data_key_t data_key =  request->_inst->cpu->data_key_;
-            cpu_bytes_t bytes{.size = (int)size_pkt, .data = data_pkt};
-            cpu_bytes_t bytes_mod;
-            DPRINTF(LSQUnit, "Complete data access [sn:%llu]: %s\n", inst->seqNum, inst->encodedPointer() ? "CA" : "LA");
-            if (inst->encodedPointer() && inst->isLoad()) {
-                bytes_mod = request->_inst->cpu->cryptoModule.encrypt_decrypt_bytes(&cc_metadata, data_tweak, &data_key, bytes, bytes_buffer);
-                pkt->data = bytes_mod.data;
-                DPRINTF(LSQUnit, "Data Decryption just happened for inst [sn:%llu]\n", inst->seqNum);
+            bool do_actual_decryption = false;
+            if (do_actual_decryption) {
+                unsigned size_pkt = pkt->getSize();
+                uint8_t *data_pkt = pkt->data;
+                uint8_t bytes_buffer[64];
+                ptr_metadata_t cc_metadata = {0};
+                uint64_t data_tweak = request->_inst->_encoded_la;
+                data_key_t data_key =  request->_inst->cpu->data_key_;
+                cpu_bytes_t bytes{.size = (int)size_pkt, .data = data_pkt};
+                cpu_bytes_t bytes_mod;
+                DPRINTF(LSQUnit, "Complete data access [sn:%llu]: %s\n",
+                        inst->seqNum, inst->encodedPointer() ? "CA" : "LA");
+                if (inst->encodedPointer() && inst->isLoad()) {
+                    bytes_mod =
+                        request->_inst->cpu->cryptoModule.encrypt_decrypt_bytes
+                        (&cc_metadata, data_tweak, &data_key,
+                        bytes, bytes_buffer);
+                    pkt->data = bytes_mod.data;
+                    DPRINTF(LSQUnit,
+                        "Data Decryption just happened for inst [sn:%llu]\n",
+                        inst->seqNum);
+                }
             }
 
             writeback(inst, request->mainPacket());
@@ -238,6 +247,7 @@ LSQUnit::init(CPU *cpu_ptr, IEW *iew_ptr, const BaseO3CPUParams &params,
     depCheckShift = params.LSQDepCheckShift;
     checkLoads = params.LSQCheckLoads;
     needsTSO = params.needsTSO;
+    enablePredTLB = params.enablePredTLB;
 
     resetState();
 }
@@ -293,13 +303,20 @@ LSQUnit::LSQUnitStats::LSQUnitStats(statistics::Group *parent)
                "Number of loads that were rescheduled"),
       ADD_STAT(rescheduledLoadsCA, statistics::units::Count::get(),
                "Number of CA loads that were rescheduled"),
+      ADD_STAT(lsForwMismatches, statistics::units::Count::get(),
+               "Number of bad store-load forwarding occurences"),
       ADD_STAT(blockedByCache, statistics::units::Count::get(),
                "Number of times an access to memory failed due to the cache "
                "being blocked"),
       ADD_STAT(loadToUse, "Distribution of cycle latency between the "
-                "first time a load is issued and its completion")
+                "first time a load is issued and its completion"),
+      ADD_STAT(cryptoLoadToUse, "Distribution of cycle latency between the "
+                "first time a CA load is issued and its completion")
 {
     loadToUse
+        .init(0, 299, 10)
+        .flags(statistics::nozero);
+    cryptoLoadToUse
         .init(0, 299, 10)
         .flags(statistics::nozero);
 }
@@ -757,7 +774,11 @@ LSQUnit::commitLoad()
     if (!inst->isInstPrefetch() && !inst->isDataPrefetch()
             && inst->firstIssue != -1
             && inst->lastWakeDependents != -1) {
-        stats.loadToUse.sample(cpu->ticksToCycles(
+        if (inst->encodedPointer())
+            stats.cryptoLoadToUse.sample(cpu->ticksToCycles(
+                    inst->lastWakeDependents - inst->firstIssue));
+        else
+            stats.loadToUse.sample(cpu->ticksToCycles(
                     inst->lastWakeDependents - inst->firstIssue));
     }
 
@@ -795,11 +816,23 @@ LSQUnit::commitStores(InstSeqNum &youngest_inst)
             // enabling write-back for subsequent stores.
             if (x.instruction()->encodedPointer() &&
             !x.instruction()->isDataKeyGenReady()){
-                DPRINTF(LSQUnit, "Store [sn:%lli] data key gen is not ready yet\n", x.instruction()->seqNum);
+                DPRINTF(LSQUnit,
+                  "Store [sn:%lli] data key gen is not ready yet\n",
+                  x.instruction()->seqNum);
+                break;
+            }
+            if (x._request->req(0) &&
+              !x._request->req(0)->isDoneDecryptingPointer()) {
+                DPRINTF(LSQUnit,
+                  "Store [sn:%lli] ptr dec is not finished yet\n",
+                  x._request->req(0)->isDoneDecryptingPointer());
+                // TODO: Do all reqs finish ptr dec at the same time?
+                // If not, this is too optimistic.
                 break;
             }
             assert(!x.instruction()->encodedPointer() ||
-            (x.instruction()->encodedPointer() && x.instruction()->isDataKeyGenReady()));
+              (x.instruction()->encodedPointer() &&
+                x.instruction()->isDataKeyGenReady()));
 
             DPRINTF(LSQUnit, "Marking store as able to write back, PC "
                     "%s [sn:%lli], Store Type: %s\n",
@@ -1306,13 +1339,15 @@ LSQUnit::processReadyLoads()
     uint32_t loadsNotSent = 0;
     uint32_t loadsWaitingOnResponse = 0;
     uint32_t loadsWaitingOnKeystream = 0;
+    uint32_t loadsWaitingOnPtrDec = 0;
     uint32_t loadsWaiting = 0;  // total
     for (auto& entry : loadQueue) {
         if (entry.valid() && entry.hasRequest()) {
             auto req = entry.request();
             activity = true;
             if (req->flags.isSet(LSQRequest::Flag::HasLoadResponse) &&
-                req->instruction()->isDataKeyGenReady()) {
+                req->instruction()->isDataKeyGenReady() &&
+                req->req(0)->isDoneDecryptingPointer()) {
                 // TODO: add conditions
                 PacketPtr pkt = req->_packets.front();
                 DPRINTF(LSQUnit, "Processing packet from LQ [inst sn: %d]\n",
@@ -1328,18 +1363,21 @@ LSQUnit::processReadyLoads()
                     loadsWaitingOnKeystream++;
                 if (!req->flags.isSet(LSQRequest::Flag::HasLoadResponse))
                     loadsWaitingOnResponse++;
+                if (!req->req(0)->isDoneDecryptingPointer())
+                    loadsWaitingOnPtrDec++;
                 loadsWaiting++;
             }
         }
     }
     DPRINTF(LSQUnit,
 "Loads not ready to be processed: %d / %d. \
-(%d need keystream, %d need response, %d not sent)\n",
+(%d need keystream, %d need response, %d not sent, %d need ptr dec)\n",
         loadsWaiting,
         loadQueue.size(),
         loadsWaitingOnKeystream,
         loadsWaitingOnResponse,
-        loadsNotSent);
+        loadsNotSent,
+        loadsWaitingOnPtrDec);
     return activity;
 }
 
@@ -1731,6 +1769,8 @@ LSQUnit::read(LSQRequest *request, ssize_t load_idx)
                         "Store idx %i to load addr %#x\n",
                         store_it._idx, request->mainReq()->getVaddr());
 
+                ++stats.lsForwMismatches;
+
                 // Must discard the request.
                 request->discard();
                 load_entry.setRequest(nullptr);
@@ -1775,10 +1815,16 @@ LSQUnit::write(LSQRequest *request, uint8_t *data, ssize_t store_idx)
     if (!(request->req()->getFlags() & Request::CACHE_BLOCK_ZERO) &&
         !request->req()->isCacheMaintenance() &&
         !request->req()->isAtomic()) {
+
+            bool do_actual_encryption = false;
             // Encrypt data if the request has a CA
-            if (request->_inst->encodedPointer()) {
-                bytes_mod = request->_inst->cpu->cryptoModule.encrypt_decrypt_bytes(&cc_metadata, data_tweak, &data_key, bytes, bytes_buffer);
-                DPRINTF(LSQUnit, "Data Encryption just happened for inst [sn:%llu]\n", storeQueue[store_idx].instruction()->seqNum);
+            if (do_actual_encryption && request->_inst->encodedPointer()) {
+                bytes_mod =
+                    request->_inst->cpu->cryptoModule.encrypt_decrypt_bytes
+                    (&cc_metadata, data_tweak, &data_key, bytes, bytes_buffer);
+                DPRINTF(LSQUnit,
+                    "Data Encryption just happened for inst [sn:%llu]\n",
+                    storeQueue[store_idx].instruction()->seqNum);
                 memcpy(storeQueue[store_idx].data(), bytes_mod.data, size);
             } else {
                 memcpy(storeQueue[store_idx].data(), data, size);

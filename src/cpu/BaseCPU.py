@@ -140,11 +140,24 @@ class BaseCPU(ClockedObject):
     max_insts_any_thread = Param.Counter(
         0, "terminate when any thread reaches this inst count"
     )
+    max_fcnts_any_thread = Param.Counter(
+        0, "terminate when any thread reaches this fcnt count"
+    )
     simpoint_start_insts = VectorParam.Counter(
         [], "starting instruction counts of simpoints"
     )
     progress_interval = Param.Frequency(
         "0Hz", "frequency to print out the progress message"
+    )
+
+    pointer_decryption_delay = Param.Unsigned(0, "C3 ptrdec delay")
+    data_keystream_delay = Param.Unsigned(0, "C3 data keystream delay")
+    enablePredTLB = Param.Bool(False, "Enable C3 PredTLB")
+    forceCryptoDelay = Param.Bool(
+        False, "Force crypto delay to all memory accesses"
+    )
+    enableCryptoFunctionality = Param.Bool(
+        False, "Actually do pointer/data encryption"
     )
 
     switched_out = Param.Bool(

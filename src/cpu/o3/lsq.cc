@@ -51,10 +51,12 @@
 #include "cpu/o3/dyn_inst.hh"
 #include "cpu/o3/iew.hh"
 #include "cpu/o3/limits.hh"
+#include "debug/C3DEBUG.hh"
 #include "debug/Drain.hh"
 #include "debug/Fetch.hh"
 #include "debug/HtmCpu.hh"
 #include "debug/LSQ.hh"
+#include "debug/TLB.hh"
 #include "debug/Writeback.hh"
 #include "params/BaseO3CPU.hh"
 
@@ -868,26 +870,26 @@ LSQ::pushRequest(const DynInstPtr& inst, bool isLoad, uint8_t *data,
             inst->isDataKeyGenReady(true);
         }
 
-        // Event function wrapper for data keystream generation unit.
-        EventFunctionWrapper *dataKeyGen = new EventFunctionWrapper(
-        [this, inst]{
-            inst->isDataKeyGenReady(true);
-            DPRINTF(LSQUnit,
-        "Complete data keystream generation for Inst [sn:%lli]\n",
-        inst->seqNum);
-            if (!inst->isSquashed()) {
-                cpu->wakeCPU();
-            } else {
-                DPRINTF(LSQUnit, "But that inst was squashed.\n");
-            }
-        },
-        "dataKeyGen", true, Event::CPU_Tick_Pri);
-
         // Schedule the event of data keystream generation.
         if (inst->encodedPointer()){
+            // Event function wrapper for data keystream generation unit.
+            EventFunctionWrapper *dataKeyGen = new EventFunctionWrapper(
+            [this, inst]{
+                    inst->isDataKeyGenReady(true);
+                    DPRINTF(LSQUnit,
+                    "Complete data keystream generation for Inst [sn:%lli]\n",
+                    inst->seqNum);
+                    if (!inst->isSquashed()) {
+                            cpu->wakeCPU();
+                    } else {
+                            DPRINTF(LSQUnit, "But that inst was squashed.\n");
+                    }
+            },
+            "dataKeyGen", true, Event::CPU_Tick_Pri);
+
             DPRINTF(LSQUnit,
-        "Initialize data keystream generation for Inst [sn:%lli]\n",
-        inst->seqNum);
+                "Initialize data keystream generation for Inst [sn:%lli]\n",
+                inst->seqNum);
             cpu->schedule(dataKeyGen, cpu->clockEdge(
                 Cycles(DATA_KEYSTREAM_GENERATION_DELAY)));
         }
@@ -1030,6 +1032,16 @@ LSQ::SingleDataRequest::initiateTranslation()
         flags.set(Flag::TranslationStarted);
 
         _inst->savedRequest = this;
+
+        if (!lsqUnit()->enablePredTLB &&
+            !_reqs.back()->isDoneDecryptingPointer()) {
+            return;
+        }
+
+        if (_inst->isStore() && !_reqs.back()->isDoneDecryptingPointer()) {
+            return;
+        }
+
         sendFragmentToTranslation(0);
     } else {
         _inst->setMemAccPredicate(false);
@@ -1062,7 +1074,7 @@ LSQ::SplitDataRequest::initiateTranslation()
                 _inst->pcState().instAddr(), _inst->contextId());
     _mainReq->setByteEnable(_byteEnable);
 
-     // How long will this request take to do pointer decryption?
+    // How long will this request take to do pointer decryption?
     bool is_crypto = _inst->encodedPointer();
     _mainReq->setPointerDecryptionTimer(is_crypto? PTR_DECRYPTION_DELAY : 0);
 
@@ -1112,6 +1124,15 @@ LSQ::SplitDataRequest::initiateTranslation()
         numInTranslationFragments = 0;
         numTranslatedFragments = 0;
         _fault.resize(_reqs.size());
+
+        if (!lsqUnit()->enablePredTLB &&
+            !_reqs.back()->isDoneDecryptingPointer()) {
+            return;
+        }
+
+        if (_inst->isStore() && !_reqs.back()->isDoneDecryptingPointer()) {
+            return;
+        }
 
         for (uint32_t i = 0; i < _reqs.size(); i++) {
             sendFragmentToTranslation(i);
@@ -1226,22 +1247,77 @@ LSQ::LSQRequest::contextId() const
 void
 LSQ::LSQRequest::sendFragmentToTranslation(int i)
 {
-    ///** Uncomment this block to use blocking pointer decryption!
-    if (!req(i)->isDoneDecryptingPointer()) {
-        this->markDelayed();
-        return;
-    }
+    ///** This block holds the logic for blocking (i.e., no PredTLB)
+    ///   pointer decryption:
+    // if (this->_inst->encodedPointer() && !this->_inst->pointerDecoded) {
+    //     this->_inst->pointerDecoded = true;
+    //     this->_addr = this->_inst->cpu->cryptoModule.decode_pointer(
+    //         this->_addr);
+    //     req(i)->_vaddr = this->_inst->cpu->cryptoModule.decode_pointer(
+    //         req(i)->_vaddr);
+    // }
 
-    if (this->_inst->encodedPointer()) {
+    // if (!req(i)->isDoneDecryptingPointer()) {
+    //     this->markDelayed();
+    //     return;
+    // }
+    //*/
+
+    // We're building a simulator here, so let's use some simulator magic.
+    // Specifically, magic out the pointer decryption step --
+    // we will do it immediately but pretend we haven't.
+    // (To only do this step once, we'll do it iff the addr is non-canonical.)
+    Addr addr = req(i)->_vaddr;
+    uint64_t addr_size = (addr & (0b111111llu << 57)) >> 57;
+    // if size is 0 or -1, we're accessing an LA.
+    // otherwise, mark this pointer as a CA
+    bool isEncoded = !((addr_size == 0) || (addr_size == 0b111111));
+    bool predTLBCorrect = false;
+    if (isEncoded) {
+        DPRINTF(C3DEBUG,
+          "(Magically) decrypting requested address %x for inst @ %x... ",
+          req(i)->_vaddr, this->_inst);
+        // then update it with its decrypted address.
         this->_addr = this->_inst->cpu->cryptoModule.decode_pointer(
             this->_addr);
         req(i)->_vaddr = this->_inst->cpu->cryptoModule.decode_pointer(
             req(i)->_vaddr);
+        DPRINTF(C3DEBUG, "got %x.\n", req(i)->_vaddr);
+
+        // Exactly once per CA inst, check if PredTLB would be correct.
+        if (lsqUnit()->enablePredTLB) {
+            predTLBCorrect = _port.getMMUPtr()->doesPredTLBSucceed(
+                    req(i), _inst->thread->getTC(),
+                    this, isLoad() ? BaseMMU::Read : BaseMMU::Write);
+            DPRINTF(C3DEBUG, "predTLBCorrect: %d.\n", predTLBCorrect);
+        }
     }
-    //*/
-    numInTranslationFragments++;
-    _port.getMMUPtr()->translateTiming(req(i), _inst->thread->getTC(),
-            this, isLoad() ? BaseMMU::Read : BaseMMU::Write);
+    // The pointer is ready to be translated IF:
+    // - it's an LA or a CA that has finished decryption, OR
+    // - it's a CA that PredTLB predicts correctly.
+    bool readyForTranslation =
+      (req(i)->isDoneDecryptingPointer() || predTLBCorrect);
+    if (!req(i)->_isCrypto) {
+        DPRINTF(C3DEBUG, "This is a linear address.\n");
+    } else if (req(i)->isDoneDecryptingPointer()) {
+        DPRINTF(C3DEBUG,
+          "Pointer decryption has finished, so we'll translate.\n");
+    } else if (readyForTranslation) {
+        DPRINTF(C3DEBUG,
+          "Pointer decryption incomplete, but PredTLB is correct!\n");
+    }
+
+    if (readyForTranslation)
+    {
+        numInTranslationFragments++;
+        //printf("(0) Hello?\n");
+        _port.getMMUPtr()->translateTiming(req(i), _inst->thread->getTC(),
+                this, isLoad() ? BaseMMU::Read : BaseMMU::Write);
+    } else {
+        // Otherwise, stall (via markDelayed, for now).
+        this->markDelayed();
+        DPRINTF(C3DEBUG, "Delayed!\n");
+    }
 }
 
 void

@@ -38,7 +38,9 @@
         0x3: decode OPCODE_OP {
             // C3 insts have the LOCK prefix
             0x01: decode MODRM {
+                0xc0: CCDECPTR(Rv,Gv);
                 0xc8: CCENCPTR(Rv,Gv);
+                0xc9: FCNT(Rv,Gv);
                 default: UD2();
             }
             default: UD2();

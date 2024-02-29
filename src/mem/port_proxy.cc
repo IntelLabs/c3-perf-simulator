@@ -58,6 +58,10 @@ void
 PortProxy::readBlobPhys(Addr addr, Request::Flags flags,
                         void *p, int size) const
 {
+    // Encrypted pointers can be passed to syscalls
+    // Those should be decrypted before being used
+    addr = (Addr) (((uint64_t) addr << 16) >> 16);
+    p = (void *) (((uint64_t) p << 16) >> 16);
     for (ChunkGenerator gen(addr, size, _cacheLineSize); !gen.done();
          gen.next()) {
 
@@ -75,6 +79,10 @@ void
 PortProxy::writeBlobPhys(Addr addr, Request::Flags flags,
                          const void *p, int size) const
 {
+    // Encrypted pointers can be passed to syscalls
+    // Those should be decrypted before being used
+    addr = (Addr) (((uint64_t) addr << 16) >> 16);
+    p = (void *) (((uint64_t) p << 16) >> 16);
     for (ChunkGenerator gen(addr, size, _cacheLineSize); !gen.done();
          gen.next()) {
 
@@ -92,6 +100,9 @@ void
 PortProxy::memsetBlobPhys(Addr addr, Request::Flags flags,
                           uint8_t v, int size) const
 {
+    // Encrypted pointers can be passed to syscalls
+    // Those should be decrypted before being used
+    addr = (Addr) (((uint64_t) addr << 16) >> 16);
     // quick and dirty...
     uint8_t *buf = new uint8_t[size];
 
@@ -104,6 +115,9 @@ PortProxy::memsetBlobPhys(Addr addr, Request::Flags flags,
 bool
 PortProxy::tryWriteString(Addr addr, const char *str) const
 {
+    // Encrypted pointers can be passed to syscalls
+    // Those should be decrypted before being used
+    addr = (Addr) (((uint64_t) addr << 16) >> 16);
     do {
         if (!tryWriteBlob(addr++, str, 1))
             return false;
@@ -114,6 +128,9 @@ PortProxy::tryWriteString(Addr addr, const char *str) const
 bool
 PortProxy::tryReadString(std::string &str, Addr addr) const
 {
+    // Encrypted pointers can be passed to syscalls
+    // Those should be decrypted before being used
+    addr = (Addr) (((uint64_t) addr << 16) >> 16);
     while (true) {
         uint8_t c;
         if (!tryReadBlob(addr++, &c, 1))
@@ -127,6 +144,9 @@ PortProxy::tryReadString(std::string &str, Addr addr) const
 bool
 PortProxy::tryReadString(char *str, Addr addr, size_t maxlen) const
 {
+    // Encrypted pointers can be passed to syscalls
+    // Those should be decrypted before being used
+    addr = (Addr) (((uint64_t) addr << 16) >> 16);
     assert(maxlen);
     while (maxlen--) {
         if (!tryReadBlob(addr++, str, 1))
