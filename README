@@ -17,10 +17,11 @@ To build, run, and test the simulator inside a controlled Docker environment, fo
 
 The Docker image will have an operational copy of C3 gem5 and can be used for further testing and demonstration as required.
 
-To run the standard tests, follow the steps below:
+We have a batch of tests to verify basic functionality of the gem5-based C3 performance simulator.
+To run a these tests, follow the steps below:
 1.  CMD:  cd tests/c3_tests
 2.  CMD:  yes | make test
-    This will build gem5 and the custom GLIBC (both already built inside the docker) and run our basic tests.
+    This will build gem5 and the custom GLIBC (both already built inside the docker) and run our tests.
 
 ---
 
