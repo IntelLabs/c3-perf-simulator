@@ -1,10 +1,8 @@
 This is an experimental performance simulator for Cryptographic Capability Computing (C3).
 
-If not copying ZIPs of other deliverables, make sure to clone this repository with --recurse-submodules - otherwise, many tests will not build.
+Clone this repository with --recurse-submodules - otherwise, many tests will not build.
 
-### Assembling simulator from downloaded ZIP files
-
-If using Docker to run and test the simulator, follow the following steps:
+To build, run, and test the simulator inside a controlled Docker environment, follow the following steps:
 1.  Run build_docker.sh 
     This script builds the c3-gem5-docker docker image, which has a copy of the gem5 source code and the run_blowfish test script.
     Once the docker image is built, a container will be spawned and the shell will be transferred to the running container.
@@ -17,28 +15,7 @@ If using Docker to run and test the simulator, follow the following steps:
       RUN3:	C3, Heap addresses encryption	, PredTLB
       RUN4:	C3, All addresses encryption	, PredTLB
 
-The docker image will have an operational copy of gem5 and can be used for further testing and demonstration as required.
-
-
-Otherwise, when assembling the simulator from downloaded ZIP files, do the following:
-
-1. Unzip `harden-p1-d1-c3-simulator.zip` and copy its root directory's contents to `c3-simulator/` in this directory.
-2. Follow the instructions in `c3-simulator/README.adoc` to assemble additional subdirectories.
-3. In `c3-simulator/malloc/cc_globals.h`, comment out lines 23-25 (a block of three defines including CC_INTEGRITY_ENABLE).
-4. Copy ascon_* and bipbip* from c3-simulator/crypto to src/crypto (i.e., the gem5 src directory).
-
-To build everything and run tests, cd into tests/c3_tests and run `make test`.
-
-### Spectre v1 demo build instructions
-
-Make sure that harden-p1-d1-c3-simulator.zip is in the root directory of this repo.
-Build the gem5 simulator and custom glibc. Then, still from within tests/c3_tests, run `spectre_build_and_run.sh`. This will both build and run the Safeside demo which has been modified to use C3.
-
-In particular, this demo shows what happens to a Spectre attack if public data and private data have overlapping allocations: only garbled secret data is retrieved.
-
-### Testing C3 against SLH
-
-To run a benchmark using Speculative Load Hardening (SLH), compile it using clang with the flag `-mspeculative-load-hardening`. To explicitly disable SLH, compile the benchmark with `-mno-speculative-load-hardening`.
+The Docker image will have an operational copy of gem5 and can be used for further testing and demonstration as required.
 
 ---
 
