@@ -124,6 +124,7 @@ CPU::CPU(const BaseO3CPUParams &params)
     cryptoModule = CCPointerEncoding();
     cryptoModule.isSimplified = !enableCryptoFunctionality;
     cryptoModule.init_pointer_key(addr_key_.bytes_, addr_key_.size_);
+    cryptoModule.isSimplified = !enableCryptoFunctionality;
 
     fatal_if(FullSystem && params.numThreads > 1,
             "SMT is not supported in O3 in full system mode currently.");
