@@ -249,6 +249,7 @@ LSQUnit::init(CPU *cpu_ptr, IEW *iew_ptr, const BaseO3CPUParams &params,
     needsTSO = params.needsTSO;
     enablePredTLB = params.enablePredTLB;
     enableSTLF = params.enableSTLF;
+    forceCryptoDelay = params.forceCryptoDelay;
 
     resetState();
 }
@@ -817,24 +818,24 @@ LSQUnit::commitStores(InstSeqNum &youngest_inst)
                 break;
             }
 
-            // Pending data keystream generation for a CA, avoid
-            // enabling write-back for subsequent stores.
-            if (x.instruction()->encodedPointer() &&
-            !x.instruction()->isDataKeyGenReady()){
-                DPRINTF(LSQUnit,
-                  "Store [sn:%lli] data key gen is not ready yet\n",
-                  x.instruction()->seqNum);
-                break;
-            }
-            if (x._request->req(0) &&
-              !x._request->req(0)->isDoneDecryptingPointer()) {
-                DPRINTF(LSQUnit,
-                  "Store [sn:%lli] ptr dec is not finished yet\n",
-                  x._request->req(0)->isDoneDecryptingPointer());
-                // TODO: Do all reqs finish ptr dec at the same time?
-                // If not, this is too optimistic.
-                break;
-            }
+            //// Pending data keystream generation for a CA, avoid
+            //// enabling write-back for subsequent stores.
+            //if (x.instruction()->encodedPointer() &&
+            //!x.instruction()->isDataKeyGenReady()){
+            //    DPRINTF(LSQUnit,
+            //      "Store [sn:%lli] data key gen is not ready yet\n",
+            //      x.instruction()->seqNum);
+            //    break;
+            //}
+            //if (x._request->req(0) &&
+            //  !x._request->req(0)->isDoneDecryptingPointer()) {
+            //    DPRINTF(LSQUnit,
+            //      "Store [sn:%lli] ptr dec is not finished yet\n",
+            //      x._request->req(0)->isDoneDecryptingPointer());
+            //    // TODO: Do all reqs finish ptr dec at the same time?
+            //    // If not, this is too optimistic.
+            //    break;
+            //}
             assert(!x.instruction()->encodedPointer() ||
               (x.instruction()->encodedPointer() &&
                 x.instruction()->isDataKeyGenReady()));
@@ -1716,6 +1717,7 @@ LSQUnit::read(LSQRequest *request, ssize_t load_idx)
                     // first time this load got executed. Signal the senderSate
                     // that response packets should be discarded.
                     request->discard();
+                    load_entry.setRequest(nullptr);
                 }
 
                 WritebackEvent *wb = new WritebackEvent(load_inst, data_pkt,

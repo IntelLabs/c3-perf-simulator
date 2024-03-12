@@ -1202,6 +1202,14 @@ Commit::commitHead(const DynInstPtr &head_inst, unsigned inst_num)
         return false;
     }
 
+    // Pending data keystream generation for a CA, avoid
+    // enabling write-back for subsequent stores.
+    if (head_inst->isStore() &&
+        head_inst->encodedPointer() &&
+        !head_inst->isDataKeyGenReady()) {
+        return false;
+    }
+
     // Check if the instruction caused a fault.  If so, trap.
     Fault inst_fault = head_inst->getFault();
 

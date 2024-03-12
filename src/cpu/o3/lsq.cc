@@ -866,12 +866,13 @@ LSQ::pushRequest(const DynInstPtr& inst, bool isLoad, uint8_t *data,
         inst->usedPredTLB(false);  // (we haven't used PredTLB yet)
 
         // Set 'isDataKeyGenReady' as 'true' for LAs.
-        if (!inst->encodedPointer()) {
+        if (!inst->encodedPointer() ||
+            (DATA_KEYSTREAM_GENERATION_DELAY == 0)) {
             inst->isDataKeyGenReady(true);
         }
 
         // Schedule the event of data keystream generation.
-        if (inst->encodedPointer()){
+        if (inst->encodedPointer() && (DATA_KEYSTREAM_GENERATION_DELAY != 0)){
             // Event function wrapper for data keystream generation unit.
             EventFunctionWrapper *dataKeyGen = new EventFunctionWrapper(
             [this, inst]{
@@ -1038,9 +1039,9 @@ LSQ::SingleDataRequest::initiateTranslation()
             return;
         }
 
-        if (_inst->isStore() && !_reqs.back()->isDoneDecryptingPointer()) {
-            return;
-        }
+        //if (_inst->isStore() && !_reqs.back()->isDoneDecryptingPointer()) {
+        //    return;
+        //}
 
         sendFragmentToTranslation(0);
     } else {
@@ -1130,9 +1131,9 @@ LSQ::SplitDataRequest::initiateTranslation()
             return;
         }
 
-        if (_inst->isStore() && !_reqs.back()->isDoneDecryptingPointer()) {
-            return;
-        }
+        //if (_inst->isStore() && !_reqs.back()->isDoneDecryptingPointer()) {
+        //    return;
+        //}
 
         for (uint32_t i = 0; i < _reqs.size(); i++) {
             sendFragmentToTranslation(i);
@@ -1283,7 +1284,9 @@ LSQ::LSQRequest::sendFragmentToTranslation(int i)
         req(i)->_vaddr = this->_inst->cpu->cryptoModule.decode_pointer(
             req(i)->_vaddr);
         DPRINTF(C3DEBUG, "got %x.\n", req(i)->_vaddr);
+    }
 
+    if (isEncoded || lsqUnit()->forceCryptoDelay) {
         // Exactly once per CA inst, check if PredTLB would be correct.
         if (lsqUnit()->enablePredTLB) {
             predTLBCorrect = _port.getMMUPtr()->doesPredTLBSucceed(
@@ -1292,6 +1295,7 @@ LSQ::LSQRequest::sendFragmentToTranslation(int i)
             DPRINTF(C3DEBUG, "predTLBCorrect: %d.\n", predTLBCorrect);
         }
     }
+
     // The pointer is ready to be translated IF:
     // - it's an LA or a CA that has finished decryption, OR
     // - it's a CA that PredTLB predicts correctly.
@@ -1305,18 +1309,20 @@ LSQ::LSQRequest::sendFragmentToTranslation(int i)
     } else if (readyForTranslation) {
         DPRINTF(C3DEBUG,
           "Pointer decryption incomplete, but PredTLB is correct!\n");
+        DPRINTF(C3DEBUG, "address %x for inst @ %x...\n",
+            req(i)->_vaddr, this->_inst);
     }
 
     if (readyForTranslation)
     {
         numInTranslationFragments++;
-        //printf("(0) Hello?\n");
         _port.getMMUPtr()->translateTiming(req(i), _inst->thread->getTC(),
                 this, isLoad() ? BaseMMU::Read : BaseMMU::Write);
     } else {
         // Otherwise, stall (via markDelayed, for now).
         this->markDelayed();
-        DPRINTF(C3DEBUG, "Delayed!\n");
+        DPRINTF(C3DEBUG, "Delayed! address %x for inst @ %x...\n",
+            req(i)->_vaddr, this->_inst);
     }
 }
 

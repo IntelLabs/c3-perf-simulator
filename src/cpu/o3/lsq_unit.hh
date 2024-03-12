@@ -524,6 +524,8 @@ class LSQUnit
     bool enablePredTLB;
     bool enableSTLF;
 
+    bool forceCryptoDelay;
+
   protected:
     // Will also need how many read/write ports the Dcache has.  Or keep track
     // of that in stage that is one level up, and only call executeLoad/Store
