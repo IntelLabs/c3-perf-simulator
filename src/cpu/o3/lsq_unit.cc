@@ -248,6 +248,7 @@ LSQUnit::init(CPU *cpu_ptr, IEW *iew_ptr, const BaseO3CPUParams &params,
     checkLoads = params.LSQCheckLoads;
     needsTSO = params.needsTSO;
     enablePredTLB = params.enablePredTLB;
+    enableSTLF = params.enableSTLF;
 
     resetState();
 }
@@ -286,6 +287,8 @@ LSQUnit::LSQUnitStats::LSQUnitStats(statistics::Group *parent)
     : statistics::Group(parent),
       ADD_STAT(forwLoads, statistics::units::Count::get(),
                "Number of loads that had data forwarded from stores"),
+      ADD_STAT(forwLoadsCA, statistics::units::Count::get(),
+               "Number of CA loads that had data forwarded from CA stores"),
       ADD_STAT(squashedLoads, statistics::units::Count::get(),
                "Number of loads squashed"),
       ADD_STAT(squashedLoadsCA, statistics::units::Count::get(),
@@ -305,6 +308,8 @@ LSQUnit::LSQUnitStats::LSQUnitStats(statistics::Group *parent)
                "Number of CA loads that were rescheduled"),
       ADD_STAT(lsForwMismatches, statistics::units::Count::get(),
                "Number of bad store-load forwarding occurences"),
+      ADD_STAT(lsForwMismatchesCA, statistics::units::Count::get(),
+               "Number of bad store-load forwarding occurences with at least one CA"),
       ADD_STAT(blockedByCache, statistics::units::Count::get(),
                "Number of times an access to memory failed due to the cache "
                "being blocked"),
@@ -1553,38 +1558,6 @@ LSQUnit::read(LSQRequest *request, ssize_t load_idx)
         return NoFault;
     }
 
-    // Access memory regardless of coverage/forwarding.
-    // We assert that in the model, the coverage check always takes less
-    // time than a mem access. Also, as written, the coverage check handles
-    // generating a new memory request. We just need recvTimingResp to
-    // ignore an incoming request if the coverage check found a match.
-    DPRINTF(LSQUnit, "Doing memory access for inst [sn:%lli] PC %s\n",
-            load_inst->seqNum, load_inst->pcState());
-
-    // Allocate memory if this is the first time a load is issued.
-    if (!load_inst->memData) {
-        load_inst->memData = new uint8_t[request->mainReq()->getSize()];
-    }
-
-
-    // hardware transactional memory
-    if (request->mainReq()->isHTMCmd()) {
-        // this is a simple sanity check
-        // the Ruby cache controller will set
-        // memData to 0x0ul if successful.
-        *load_inst->memData = (uint64_t) 0x1ull;
-    }
-
-    // For now, load throughput is constrained by the number of
-    // load FUs only, and loads do not consume a cache port (only
-    // stores do).
-    // @todo We should account for cache port contention
-    // and arbitrate between loads and stores.
-
-    // if we the cache is not blocked, do cache access
-    request->buildPackets();
-    request->sendPacketToCache();
-
     // Check the SQ for any previous stores that might lead to forwarding
     auto store_it = load_inst->sqIt;
     assert (store_it >= storeWBIt);
@@ -1617,6 +1590,19 @@ LSQUnit::read(LSQRequest *request, ssize_t load_idx)
             bool upper_load_has_store_part = req_e > st_s;
 
             auto coverage = AddrRangeCoverage::NoAddrRangeCoverage;
+
+            // Variables needed for comparing lower 32 bits of the addresses in STLF
+            // "coverage_lower32" --> indicates whether lower 32 bits are overlapping or not
+            auto req_s_lower32 = req_s & 0x00000000FFFFFFFF;
+            auto req_e_lower32 = req_e & 0x00000000FFFFFFFF;
+            auto st_s_lower32 = st_s & 0x00000000FFFFFFFF;
+            auto st_e_lower32 = st_e & 0x00000000FFFFFFFF;
+            auto coverage_lower32 = AddrRangeCoverage::NoAddrRangeCoverage;
+            if ((req_s_lower32 > st_e_lower32) || (st_s_lower32 > req_e_lower32)) {
+                coverage_lower32 = AddrRangeCoverage::NoAddrRangeCoverage;
+            } else {
+                coverage_lower32 = AddrRangeCoverage::PartialAddrRangeCoverage; // never gets used
+            }
 
             // If the store entry is not atomic (atomic does not have valid
             // data), the store has all of the data needed, and
@@ -1651,9 +1637,20 @@ LSQUnit::read(LSQRequest *request, ssize_t load_idx)
                 coverage = AddrRangeCoverage::PartialAddrRangeCoverage;
             }
 
-            // C3: For this release, disable STLF
-            //if (coverage == AddrRangeCoverage::FullAddrRangeCoverage) {
-            if (false) {
+            // No Coverage.
+            if (((coverage == AddrRangeCoverage::NoAddrRangeCoverage) && 
+                !load_inst->encodedPointer() && 
+                !store_it->instruction()->encodedPointer())
+                ||
+                (coverage_lower32 == AddrRangeCoverage::NoAddrRangeCoverage)){
+                    continue;
+            }
+            // Full Coverage: Forwarding only happens when there's full coverage case between two LAs.
+            else if (
+                ((coverage == AddrRangeCoverage::FullAddrRangeCoverage) && 
+                (load_inst->encodedPointer() == store_it->instruction()->encodedPointer())) &&
+                (enableSTLF)
+            ) {
                 // Get shift amount for offset into the store's data.
                 int shift_amt = request->mainReq()->getVaddr() -
                     store_it->instruction()->effAddr;
@@ -1674,6 +1671,10 @@ LSQUnit::read(LSQRequest *request, ssize_t load_idx)
                 DPRINTF(LSQUnit, "Forwarding from store idx %i to load to "
                         "addr %#x\n", store_it._idx,
                         request->mainReq()->getVaddr());
+
+                DPRINTF(LSQUnit, "Store to Load Forwarding from %s to %s\n"
+                        , store_it->instruction()->encodedPointer() ? "CA" : "LA"
+                        , load_inst->encodedPointer() ? "CA" : "LA");
 
                 PacketPtr data_pkt = new Packet(request->mainReq(),
                         MemCmd::ReadReq);
@@ -1728,10 +1729,14 @@ LSQUnit::read(LSQRequest *request, ssize_t load_idx)
                 // Don't need to do anything special for split loads.
                 ++stats.forwLoads;
 
+                if (load_inst->encodedPointer()) {
+                    ++stats.forwLoadsCA;
+                }
+
                 return NoFault;
-            } else if (
-                    coverage == AddrRangeCoverage::PartialAddrRangeCoverage ||
-                    coverage == AddrRangeCoverage::FullAddrRangeCoverage) {
+            } 
+            // Partial Coverage: Rescheudle load instruction.
+            else {
                 // If it's already been written back, then don't worry about
                 // stalling on it.
                 if (store_it->completed()) {
@@ -1750,8 +1755,6 @@ LSQUnit::read(LSQRequest *request, ssize_t load_idx)
                     stallingLoadIdx = load_idx;
                 }
 
-                // make sure the memory request which was issued doesn't commit
-                load_inst->hasStoreCoverage = true;
 
                 // Tell IQ/mem dep unit that this instruction will need to be
                 // rescheduled eventually
@@ -1771,6 +1774,10 @@ LSQUnit::read(LSQRequest *request, ssize_t load_idx)
 
                 ++stats.lsForwMismatches;
 
+                if(load_inst->encodedPointer() || store_it->instruction()->encodedPointer()) {
+                    ++stats.lsForwMismatchesCA;
+                }
+
                 // Must discard the request.
                 request->discard();
                 load_entry.setRequest(nullptr);
@@ -1778,6 +1785,38 @@ LSQUnit::read(LSQRequest *request, ssize_t load_idx)
             }
         }
     }
+
+    // Access memory regardless of coverage/forwarding.
+    // We assert that in the model, the coverage check always takes less
+    // time than a mem access. Also, as written, the coverage check handles
+    // generating a new memory request. We just need recvTimingResp to
+    // ignore an incoming request if the coverage check found a match.
+    DPRINTF(LSQUnit, "Doing memory access for inst [sn:%lli] PC %s\n",
+            load_inst->seqNum, load_inst->pcState());
+
+    // Allocate memory if this is the first time a load is issued.
+    if (!load_inst->memData) {
+        load_inst->memData = new uint8_t[request->mainReq()->getSize()];
+    }
+
+
+    // hardware transactional memory
+    if (request->mainReq()->isHTMCmd()) {
+        // this is a simple sanity check
+        // the Ruby cache controller will set
+        // memData to 0x0ul if successful.
+        *load_inst->memData = (uint64_t) 0x1ull;
+    }
+
+    // For now, load throughput is constrained by the number of
+    // load FUs only, and loads do not consume a cache port (only
+    // stores do).
+    // @todo We should account for cache port contention
+    // and arbitrate between loads and stores.
+
+    // if we the cache is not blocked, do cache access
+    request->buildPackets();
+    request->sendPacketToCache();
 
     if (!request->isSent())
         iewStage->blockMemInst(load_inst);

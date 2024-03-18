@@ -548,6 +548,8 @@ class CPU : public BaseCPU
 
     uint32_t dataKeystreamDelay;
 
+    bool enableSTLF;
+
     bool enablePredTLB;
 
     bool forceCryptoDelay;

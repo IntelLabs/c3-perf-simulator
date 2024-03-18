@@ -723,6 +723,12 @@ def addSEOptions(parser):
         help="Number of cycles to generate the data " "keystream for a CA.",
     )
     parser.add_argument(
+        "--enableSTLF",
+        action="store_true",
+        default=False,
+        help="""Enable Store-to-Load Forwarding.""",
+    )
+    parser.add_argument(
         "--enablePredTLB",
         action="store_true",
         default=False,
