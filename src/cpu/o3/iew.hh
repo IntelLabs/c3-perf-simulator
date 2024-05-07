@@ -369,8 +369,6 @@ class IEW
      */
     bool updateLSQNextCycle;
 
-    bool enablePredTLB;
-
   private:
     /** Records if there is a fetch redirect on this cycle for each thread. */
     bool fetchRedirect[MaxThreads];

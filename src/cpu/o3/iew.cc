@@ -112,8 +112,6 @@ IEW::IEW(CPU *_cpu, const BaseO3CPUParams &params)
 
     updateLSQNextCycle = false;
 
-    enablePredTLB = params.enablePredTLB;
-
     skidBufferMax = (renameToIEWDelay + 1) * params.renameWidth;
 }
 
