@@ -1133,15 +1133,10 @@ InstructionQueue::cacheUnblocked()
 DynInstPtr
 InstructionQueue::getDeferredMemInstToExecute()
 {
-    // TODO: In translation, only use PredTLB if the LA is not available.
-    // If pointer decryption uses PredTLB, hasLA is always true.
-    // If pointer decryption delays translation, hasLA eventually becomes
-    // true, so try to translate again until it is.
     for (ListIt it = deferredMemInsts.begin(); it != deferredMemInsts.end();
          ++it) {
         if (
             (*it)->isSquashed() ||
-            ((*it)->encodedPointer() && (*it)->hasLA()) ||
             ((*it)->translationCompleted())
             )
         {

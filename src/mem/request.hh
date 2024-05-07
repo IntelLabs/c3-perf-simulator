@@ -496,25 +496,6 @@ class Request
 
     bool _isCrypto;
 
-    uint8_t _pointerDecryptionTimer = 0;
-
-    void setPointerDecryptionTimer(uint8_t cycles) {
-        _isCrypto = !!cycles;
-        _pointerDecryptionTimer = cycles;
-    }
-
-    // The pointer decryption timer is just a counter which decrements
-    // until 0.
-    void continueDecryptingPointer() {
-        if (_pointerDecryptionTimer != 0)
-            _pointerDecryptionTimer--;
-    }
-
-    // Decryption has finished when the counter is at 0.
-    bool isDoneDecryptingPointer() {
-        return _pointerDecryptionTimer == 0;
-    }
-
     Request(Addr vaddr, unsigned size, Flags flags,
             RequestorID id, Addr pc, ContextID cid,
             AtomicOpFunctorPtr atomic_op=nullptr)

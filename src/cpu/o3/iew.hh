@@ -340,6 +340,9 @@ class IEW
     /** Scoreboard pointer. */
     Scoreboard* scoreboard;
 
+    /** Queue of memory instructions delayed by crypto delay. */
+    std::queue<DynInstPtr> cryptoDelayedMemInsts;
+
   private:
     /** CPU pointer. */
     CPU *cpu;
@@ -365,6 +368,8 @@ class IEW
      * IEW knows if there will be activity on the next cycle.
      */
     bool updateLSQNextCycle;
+
+    bool enablePredTLB;
 
   private:
     /** Records if there is a fetch redirect on this cycle for each thread. */

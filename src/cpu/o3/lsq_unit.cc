@@ -818,27 +818,11 @@ LSQUnit::commitStores(InstSeqNum &youngest_inst)
                 break;
             }
 
-            //// Pending data keystream generation for a CA, avoid
-            //// enabling write-back for subsequent stores.
-            //if (x.instruction()->encodedPointer() &&
-            //!x.instruction()->isDataKeyGenReady()){
-            //    DPRINTF(LSQUnit,
-            //      "Store [sn:%lli] data key gen is not ready yet\n",
-            //      x.instruction()->seqNum);
-            //    break;
-            //}
-            //if (x._request->req(0) &&
-            //  !x._request->req(0)->isDoneDecryptingPointer()) {
-            //    DPRINTF(LSQUnit,
-            //      "Store [sn:%lli] ptr dec is not finished yet\n",
-            //      x._request->req(0)->isDoneDecryptingPointer());
-            //    // TODO: Do all reqs finish ptr dec at the same time?
-            //    // If not, this is too optimistic.
-            //    break;
-            //}
+            // Stores that haven't finished data keystream generation
+            // can't commit from ROB
             assert(!x.instruction()->encodedPointer() ||
               (x.instruction()->encodedPointer() &&
-                x.instruction()->isDataKeyGenReady()));
+                x.instruction()->isDoneGeneratingDataKey()));
 
             DPRINTF(LSQUnit, "Marking store as able to write back, PC "
                     "%s [sn:%lli], Store Type: %s\n",
@@ -1352,8 +1336,8 @@ LSQUnit::processReadyLoads()
             auto req = entry.request();
             activity = true;
             if (req->flags.isSet(LSQRequest::Flag::HasLoadResponse) &&
-                req->instruction()->isDataKeyGenReady() &&
-                req->req(0)->isDoneDecryptingPointer()) {
+                req->instruction()->isDoneDecryptingPointer() &&
+                req->instruction()->isDoneGeneratingDataKey()) {
                 // TODO: add conditions
                 PacketPtr pkt = req->_packets.front();
                 DPRINTF(LSQUnit, "Processing packet from LQ [inst sn: %d]\n",
@@ -1365,11 +1349,11 @@ LSQUnit::processReadyLoads()
                     req->instruction()->seqNum);
                 if (!req->isSent())
                     loadsNotSent++;
-                if (!req->instruction()->isDataKeyGenReady())
+                if (!req->instruction()->isDoneGeneratingDataKey())
                     loadsWaitingOnKeystream++;
                 if (!req->flags.isSet(LSQRequest::Flag::HasLoadResponse))
                     loadsWaitingOnResponse++;
-                if (!req->req(0)->isDoneDecryptingPointer())
+                if (!req->instruction()->isDoneDecryptingPointer())
                     loadsWaitingOnPtrDec++;
                 loadsWaiting++;
             }
@@ -1393,23 +1377,29 @@ LSQUnit::LSQEntry::progressPointerDecryption()
     // entry.hasRequest is only true after translation.
     // But entry.instruction() is available immediately at dispatch,
     // and requests are available thru the DynInst at first execute.
-    if (instruction() == NULL) return;
+    if (!instruction()) return;
 
-    // this should never happen
-    if (instruction()->savedRequest == NULL) return;
+    if (!instruction()->isDoneDecryptingPointer())
+        instruction()->continueDecryptingPointer();
 
-    // hasLA is always true for LAs
-    if (!(instruction()->encodedPointer())) return;
+    if (!instruction()->isDoneGeneratingDataKey())
+        instruction()->continueGeneratingDataKey();
 
-    bool instDoneWithPtrDec = true;
-    for (auto& req : instruction()->savedRequest->_reqs) {
-        if (req) {
-            req->continueDecryptingPointer();
-            instDoneWithPtrDec = instDoneWithPtrDec &&
-                req->isDoneDecryptingPointer();
-        }
-    }
-    instruction()->hasLA(instDoneWithPtrDec);
+    //// this should never happen
+    //if (instruction()->savedRequest == NULL) return;
+
+    //// hasLA is always true for LAs
+    //if (!(instruction()->encodedPointer())) return;
+
+    //bool instDoneWithPtrDec = true;
+    //for (auto& req : instruction()->savedRequest->_reqs) {
+    //    if (req) {
+    //        req->continueDecryptingPointer();
+    //        instDoneWithPtrDec = instDoneWithPtrDec &&
+    //            req->isDoneDecryptingPointer();
+    //    }
+    //}
+    //instruction()->hasLA(instDoneWithPtrDec);
 }
 
 void

@@ -1206,7 +1206,7 @@ Commit::commitHead(const DynInstPtr &head_inst, unsigned inst_num)
     // enabling write-back for subsequent stores.
     if (head_inst->isStore() &&
         head_inst->encodedPointer() &&
-        !head_inst->isDataKeyGenReady()) {
+        !head_inst->isDoneGeneratingDataKey()) {
         return false;
     }
 
@@ -1305,6 +1305,7 @@ Commit::commitHead(const DynInstPtr &head_inst, unsigned inst_num)
     DPRINTF(Commit,
             "[tid:%i] [sn:%llu] Committing instruction with PC %s\n",
             tid, head_inst->seqNum, head_inst->pcState());
+
     if (head_inst->traceData) {
         head_inst->traceData->setFetchSeq(head_inst->seqNum);
         head_inst->traceData->setCPSeq(thread[tid]->numOp);

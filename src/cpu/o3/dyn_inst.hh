@@ -364,9 +364,6 @@ class DynInst : public ExecContext, public RefCounted
      * packet receipt.) */
     bool hasStoreCoverage = false;
 
-    bool pointerDecoded = true;
-
-
     /////////////////////// TLB Miss //////////////////////
     /**
      * Saved memory request (needed when the DTB address translation is
@@ -478,6 +475,42 @@ class DynInst : public ExecContext, public RefCounted
 
     bool hasLA() const { return instFlags[HasLA]; }
     void hasLA(bool f) { instFlags[HasLA] = f; }
+
+    uint8_t _pointerDecryptionTimer = 0;
+
+    void setPointerDecryptionTimer(uint8_t cycles) {
+        _pointerDecryptionTimer = cycles;
+    }
+
+    // The pointer decryption timer is just a counter which decrements
+    // until 0.
+    void continueDecryptingPointer() {
+        if (_pointerDecryptionTimer != 0)
+            _pointerDecryptionTimer--;
+    }
+
+    // Decryption has finished when the counter is at 0.
+    bool isDoneDecryptingPointer() {
+        return _pointerDecryptionTimer == 0;
+    }
+
+    uint8_t _dataKeyGenTimer = 0;
+
+    void setDataKeyGenTimer(uint8_t cycles) {
+        _dataKeyGenTimer = cycles;
+    }
+
+    // The data keystream generation timer is just a counter which decrements
+    // until 0.
+    void continueGeneratingDataKey() {
+        if (_dataKeyGenTimer != 0)
+            _dataKeyGenTimer--;
+    }
+
+    // Keystream generation has finished when the counter is at 0.
+    bool isDoneGeneratingDataKey() {
+        return _dataKeyGenTimer == 0;
+    }
 
   public:
 #ifdef DEBUG
