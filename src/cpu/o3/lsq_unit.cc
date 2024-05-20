@@ -1566,6 +1566,22 @@ LSQUnit::read(LSQRequest *request, ssize_t load_idx)
 
             auto coverage = AddrRangeCoverage::NoAddrRangeCoverage;
 
+            // Variables needed for comparing lower 32 bits of the
+            // addresses in STLF "coverage_lower32" --> indicates
+            // whether lower 32 bits are overlapping or not
+            auto req_s_lower32 = req_s & 0x00000000FFFFFFFF;
+            auto req_e_lower32 = req_e & 0x00000000FFFFFFFF;
+            auto st_s_lower32 = st_s & 0x00000000FFFFFFFF;
+            auto st_e_lower32 = st_e & 0x00000000FFFFFFFF;
+            auto coverage_lower32 = AddrRangeCoverage::NoAddrRangeCoverage;
+            if ((req_s_lower32 >= st_e_lower32) ||
+                (st_s_lower32 >= req_e_lower32)) {
+                coverage_lower32 = AddrRangeCoverage::NoAddrRangeCoverage;
+            } else {
+                // never gets used
+                coverage_lower32 = AddrRangeCoverage::PartialAddrRangeCoverage;
+            }
+
             // If the store entry is not atomic (atomic does not have valid
             // data), the store has all of the data needed, and
             // the load is not LLSC, then
@@ -1599,7 +1615,22 @@ LSQUnit::read(LSQRequest *request, ssize_t load_idx)
                 coverage = AddrRangeCoverage::PartialAddrRangeCoverage;
             }
 
-            if (coverage == AddrRangeCoverage::FullAddrRangeCoverage) {
+            // No Coverage.
+            if (((coverage == AddrRangeCoverage::NoAddrRangeCoverage) &&
+                !load_inst->encodedPointer() &&
+                !store_it->instruction()->encodedPointer())
+                ||
+                (coverage_lower32 == AddrRangeCoverage::NoAddrRangeCoverage)){
+                    continue;
+            }
+            // Full Coverage: Forwarding only happens
+            // when there's full coverage case between two LAs.
+            else if (
+                ((coverage == AddrRangeCoverage::FullAddrRangeCoverage) &&
+                (load_inst->encodedPointer() ==
+                    store_it->instruction()->encodedPointer())) &&
+                (enableSTLF)
+            ) {
                 // Get shift amount for offset into the store's data.
                 int shift_amt = request->mainReq()->getVaddr() -
                     store_it->instruction()->effAddr;
@@ -1684,12 +1715,9 @@ LSQUnit::read(LSQRequest *request, ssize_t load_idx)
                 }
 
                 return NoFault;
-            //}
-            //// Partial Coverage: Rescheudle load instruction.
-            //else {
-            } else if (
-                    coverage == AddrRangeCoverage::PartialAddrRangeCoverage ||
-                    coverage == AddrRangeCoverage::FullAddrRangeCoverage) {
+            }
+            // Partial Coverage: Rescheudle load instruction.
+            else {
                 // If it's already been written back, then don't worry about
                 // stalling on it.
                 if (store_it->completed()) {

@@ -551,6 +551,8 @@ def run(options, root, testsys, cpu_class):
                 switch_cpus[
                     i
                 ].data_keystream_delay = options.data_keystream_delay
+            if options.enableSTLF:
+                switch_cpus[i].enableSTLF = options.enableSTLF
             if options.enablePredTLB:
                 switch_cpus[i].enablePredTLB = options.enablePredTLB
             if options.forceCryptoDelay:
