@@ -62,6 +62,7 @@
 
 #include "mem/protocol/functional.hh"
 #include "sim/byteswap.hh"
+#include "cpu/c3_utils.hh"
 
 namespace gem5
 {
@@ -112,6 +113,8 @@ class PortProxy : FunctionalRequestProtocol
     PortProxy(const RequestPort &port, unsigned int cache_line_size);
 
     virtual ~PortProxy() {}
+
+    ThreadContext* _tc = nullptr;
 
 
     /** Fixed functionality for use in base classes. */
