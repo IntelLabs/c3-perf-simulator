@@ -23,7 +23,7 @@ To run a these tests, follow the steps below:
 2.  CMD:  yes | make test
     This will build gem5 and the custom GLIBC (both already built inside the docker) and run our tests.
 
-We are also including scripts to run SPEC 2017 benchmarks on C3 gem5 for reroducing the results we have reported.
+We are also including scripts to run SPEC CPU2017 benchmarks on C3 gem5 for reproducing the results we have reported.
 Please note that the results were obtained for specific versions of the binaries installed inside the docker, 
 and might change if any other version is used. Read README_SPEC for a detailed description of the steps to run these benchmarks.
 ---
