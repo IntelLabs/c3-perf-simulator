@@ -82,12 +82,12 @@ WORKDIR $C3_GEM5_DIR
 COPY . .
 RUN git clone https://github.com/IntelLabs/c3-simulator && \
     cd $C3_GLIBC_DIR && \
-    git clone -b glibc-nowrap https://github.com/IntelLabs/c3-glibc src && \
+    git clone -b harden-may2024 https://github.com/IntelLabs/c3-glibc src && \
     cd $C3_GEM5_DIR
 
 RUN (yes || true) | scons build/X86/gem5.opt -j8
 
-RUN cd $C3_GLIBC_DIR && ./make_glibc.sh
+RUN cd $C3_GLIBC_DIR && CC_NO_WRAP_ENABLE=1 ./make_glibc.sh
 
 RUN cd $C3_GEM5_DIR/tests/c3_tests && \
     git clone https://github.com/embecosm/mibench.git && \

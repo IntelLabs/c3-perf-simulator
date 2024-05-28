@@ -1,0 +1,32 @@
+In this release, we have included the scripts to run SPEC 2017 benchmarks on C3 gem5 for reproducing the reported results.
+Please note that the results were obtained for specific versions of the binaries installed inside the docker, 
+and might change if any other version is used.
+
+Steps:
+
+1.  Preparing your SPEC Installation
+    If not installed already, follow the guide here (https://www.spec.org/cpu2017/Docs/install-guide-unix.html) to setup your copy of SPEC 2017.
+    The SPEC installation path will be required in the next step.
+2.  Running Docker with SPEC
+    Build the docker image using the build_docker.sh script as mentioned above and exit the docker once it launches.
+    Execute the binary run_docker_with_SPEC.sh passing the path to you SPEC installation as an argument as given below:
+    ./run_docker_with_SPEC.sh <Path/to/SPEC2017>
+    This will mount the SPEC 2017 installation directory insde the docker at /spec2017 and attach to the docker shell.
+3.  Preparing SPEC binaries
+    Run prep_spec_run.sh to build and run the SPEC benchmarks at least once inside the docker.
+    This generates the required directory structure inside the docker to execute these benchmarks with gem5.
+    It also clones and build pinplay-tools, which is required to collect simpoints.
+4.  Running SPEC with gem5
+    Run run_SPEC_benchmarks.sh to execute the benchmarks with gem5.
+    This is a 4 step process and can take a considerable amount of time, depending on the number of instructions being run for.
+    The steps are as follows:-
+        i)    Generating BBV (Block base vector)
+              Generate the BBV for the benchmark using SimpleAtomicCPU.
+        ii)   Genetating Simpoint weights from BBV
+        iii)  Taking checkpoints
+              Run the benchmarks with gem5 again to collect the checkpoints as described in the simpoints
+        iv)   Running gem5 from checkpoints
+              Run gem5 from collected checkpoints using C3 CPU
+    The max number of instructions gem5 should run to is given as an argument to the script. Keeping this
+
+    100,000,000 istructions approximately translate to about 36 hours of test run time.
