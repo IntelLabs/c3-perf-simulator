@@ -249,6 +249,7 @@ LSQUnit::init(CPU *cpu_ptr, IEW *iew_ptr, const BaseO3CPUParams &params,
     needsTSO = params.needsTSO;
     enablePredTLB = params.enablePredTLB;
     enableSTLF = params.enableSTLF;
+    forceCryptoDelay = params.forceCryptoDelay;
 
     resetState();
 }
@@ -817,27 +818,11 @@ LSQUnit::commitStores(InstSeqNum &youngest_inst)
                 break;
             }
 
-            // Pending data keystream generation for a CA, avoid
-            // enabling write-back for subsequent stores.
-            if (x.instruction()->encodedPointer() &&
-            !x.instruction()->isDataKeyGenReady()){
-                DPRINTF(LSQUnit,
-                  "Store [sn:%lli] data key gen is not ready yet\n",
-                  x.instruction()->seqNum);
-                break;
-            }
-            if (x._request->req(0) &&
-              !x._request->req(0)->isDoneDecryptingPointer()) {
-                DPRINTF(LSQUnit,
-                  "Store [sn:%lli] ptr dec is not finished yet\n",
-                  x._request->req(0)->isDoneDecryptingPointer());
-                // TODO: Do all reqs finish ptr dec at the same time?
-                // If not, this is too optimistic.
-                break;
-            }
+            // Stores that haven't finished data keystream generation
+            // can't commit from ROB
             assert(!x.instruction()->encodedPointer() ||
               (x.instruction()->encodedPointer() &&
-                x.instruction()->isDataKeyGenReady()));
+                x.instruction()->isDoneGeneratingDataKey()));
 
             DPRINTF(LSQUnit, "Marking store as able to write back, PC "
                     "%s [sn:%lli], Store Type: %s\n",
@@ -1351,8 +1336,8 @@ LSQUnit::processReadyLoads()
             auto req = entry.request();
             activity = true;
             if (req->flags.isSet(LSQRequest::Flag::HasLoadResponse) &&
-                req->instruction()->isDataKeyGenReady() &&
-                req->req(0)->isDoneDecryptingPointer()) {
+                req->instruction()->isDoneDecryptingPointer() &&
+                req->instruction()->isDoneGeneratingDataKey()) {
                 // TODO: add conditions
                 PacketPtr pkt = req->_packets.front();
                 DPRINTF(LSQUnit, "Processing packet from LQ [inst sn: %d]\n",
@@ -1364,11 +1349,11 @@ LSQUnit::processReadyLoads()
                     req->instruction()->seqNum);
                 if (!req->isSent())
                     loadsNotSent++;
-                if (!req->instruction()->isDataKeyGenReady())
+                if (!req->instruction()->isDoneGeneratingDataKey())
                     loadsWaitingOnKeystream++;
                 if (!req->flags.isSet(LSQRequest::Flag::HasLoadResponse))
                     loadsWaitingOnResponse++;
-                if (!req->req(0)->isDoneDecryptingPointer())
+                if (!req->instruction()->isDoneDecryptingPointer())
                     loadsWaitingOnPtrDec++;
                 loadsWaiting++;
             }
@@ -1392,23 +1377,13 @@ LSQUnit::LSQEntry::progressPointerDecryption()
     // entry.hasRequest is only true after translation.
     // But entry.instruction() is available immediately at dispatch,
     // and requests are available thru the DynInst at first execute.
-    if (instruction() == NULL) return;
+    if (!instruction()) return;
 
-    // this should never happen
-    if (instruction()->savedRequest == NULL) return;
+    if (!instruction()->isDoneDecryptingPointer())
+        instruction()->continueDecryptingPointer();
 
-    // hasLA is always true for LAs
-    if (!(instruction()->encodedPointer())) return;
-
-    bool instDoneWithPtrDec = true;
-    for (auto& req : instruction()->savedRequest->_reqs) {
-        if (req) {
-            req->continueDecryptingPointer();
-            instDoneWithPtrDec = instDoneWithPtrDec &&
-                req->isDoneDecryptingPointer();
-        }
-    }
-    instruction()->hasLA(instDoneWithPtrDec);
+    if (!instruction()->isDoneGeneratingDataKey())
+        instruction()->continueGeneratingDataKey();
 }
 
 void
@@ -1591,17 +1566,20 @@ LSQUnit::read(LSQRequest *request, ssize_t load_idx)
 
             auto coverage = AddrRangeCoverage::NoAddrRangeCoverage;
 
-            // Variables needed for comparing lower 32 bits of the addresses in STLF
-            // "coverage_lower32" --> indicates whether lower 32 bits are overlapping or not
+            // Variables needed for comparing lower 32 bits of the
+            // addresses in STLF "coverage_lower32" --> indicates
+            // whether lower 32 bits are overlapping or not
             auto req_s_lower32 = req_s & 0x00000000FFFFFFFF;
             auto req_e_lower32 = req_e & 0x00000000FFFFFFFF;
             auto st_s_lower32 = st_s & 0x00000000FFFFFFFF;
             auto st_e_lower32 = st_e & 0x00000000FFFFFFFF;
             auto coverage_lower32 = AddrRangeCoverage::NoAddrRangeCoverage;
-            if ((req_s_lower32 > st_e_lower32) || (st_s_lower32 > req_e_lower32)) {
+            if ((req_s_lower32 >= st_e_lower32) ||
+                (st_s_lower32 >= req_e_lower32)) {
                 coverage_lower32 = AddrRangeCoverage::NoAddrRangeCoverage;
             } else {
-                coverage_lower32 = AddrRangeCoverage::PartialAddrRangeCoverage; // never gets used
+                // never gets used
+                coverage_lower32 = AddrRangeCoverage::PartialAddrRangeCoverage;
             }
 
             // If the store entry is not atomic (atomic does not have valid
@@ -1638,17 +1616,19 @@ LSQUnit::read(LSQRequest *request, ssize_t load_idx)
             }
 
             // No Coverage.
-            if (((coverage == AddrRangeCoverage::NoAddrRangeCoverage) && 
-                !load_inst->encodedPointer() && 
+            if (((coverage == AddrRangeCoverage::NoAddrRangeCoverage) &&
+                !load_inst->encodedPointer() &&
                 !store_it->instruction()->encodedPointer())
                 ||
                 (coverage_lower32 == AddrRangeCoverage::NoAddrRangeCoverage)){
                     continue;
             }
-            // Full Coverage: Forwarding only happens when there's full coverage case between two LAs.
+            // Full Coverage: Forwarding only happens
+            // when there's full coverage case between two LAs.
             else if (
-                ((coverage == AddrRangeCoverage::FullAddrRangeCoverage) && 
-                (load_inst->encodedPointer() == store_it->instruction()->encodedPointer())) &&
+                ((coverage == AddrRangeCoverage::FullAddrRangeCoverage) &&
+                (load_inst->encodedPointer() ==
+                    store_it->instruction()->encodedPointer())) &&
                 (enableSTLF)
             ) {
                 // Get shift amount for offset into the store's data.
@@ -1673,8 +1653,8 @@ LSQUnit::read(LSQRequest *request, ssize_t load_idx)
                         request->mainReq()->getVaddr());
 
                 DPRINTF(LSQUnit, "Store to Load Forwarding from %s to %s\n"
-                        , store_it->instruction()->encodedPointer() ? "CA" : "LA"
-                        , load_inst->encodedPointer() ? "CA" : "LA");
+                    , store_it->instruction()->encodedPointer() ? "CA" : "LA"
+                    , load_inst->encodedPointer() ? "CA" : "LA");
 
                 PacketPtr data_pkt = new Packet(request->mainReq(),
                         MemCmd::ReadReq);
@@ -1716,6 +1696,7 @@ LSQUnit::read(LSQRequest *request, ssize_t load_idx)
                     // first time this load got executed. Signal the senderSate
                     // that response packets should be discarded.
                     request->discard();
+                    load_entry.setRequest(nullptr);
                 }
 
                 WritebackEvent *wb = new WritebackEvent(load_inst, data_pkt,
@@ -1734,7 +1715,7 @@ LSQUnit::read(LSQRequest *request, ssize_t load_idx)
                 }
 
                 return NoFault;
-            } 
+            }
             // Partial Coverage: Rescheudle load instruction.
             else {
                 // If it's already been written back, then don't worry about
@@ -1755,6 +1736,8 @@ LSQUnit::read(LSQRequest *request, ssize_t load_idx)
                     stallingLoadIdx = load_idx;
                 }
 
+                // make sure the memory request which was issued doesn't commit
+                load_inst->hasStoreCoverage = true;
 
                 // Tell IQ/mem dep unit that this instruction will need to be
                 // rescheduled eventually
@@ -1774,7 +1757,8 @@ LSQUnit::read(LSQRequest *request, ssize_t load_idx)
 
                 ++stats.lsForwMismatches;
 
-                if(load_inst->encodedPointer() || store_it->instruction()->encodedPointer()) {
+                if (load_inst->encodedPointer() ||
+                    store_it->instruction()->encodedPointer()) {
                     ++stats.lsForwMismatchesCA;
                 }
 

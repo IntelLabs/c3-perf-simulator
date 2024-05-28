@@ -53,6 +53,7 @@
 #include "cpu/o3/limits.hh"
 #include "cpu/timebuf.hh"
 #include "debug/Activity.hh"
+#include "debug/C3DEBUG.hh"
 #include "debug/Drain.hh"
 #include "debug/IEW.hh"
 #include "debug/O3PipeView.hh"
@@ -1150,14 +1151,36 @@ IEW::executeInsts()
 //    printAvailableInsts();
 
     // Execute/writeback any instructions that are available.
-    int insts_to_execute = fromIssue->size;
+    //int insts_to_execute = fromIssue->size;
+    int insts_from_issue = fromIssue->size;
+    int insts_delayed = cryptoDelayedMemInsts.size();
+    int insts_to_execute = insts_from_issue + insts_delayed;
     int inst_num = 0;
     for (; inst_num < insts_to_execute;
           ++inst_num) {
 
         DPRINTF(IEW, "Execute: Executing instructions from IQ.\n");
+        DynInstPtr inst;
 
-        DynInstPtr inst = instQueue.getInstToExecute();
+        if (inst_num < insts_from_issue) {
+          inst = instQueue.getInstToExecute();
+        } else {
+          inst = cryptoDelayedMemInsts.front();
+          // The FIFO queue ensures that the front is the oldest.
+          // Thus, if the front is not decrypted yet,
+          // the others are not done either.
+          if (!inst->isSquashed() && !inst->isDoneDecryptingPointer()) {
+              DPRINTF(C3DEBUG,
+              "Still waiting for decryption to be done! inst [sn:%lli]...\n",
+              inst->seqNum);
+              break;
+          }
+
+          cryptoDelayedMemInsts.pop();
+          DPRINTF(C3DEBUG,
+              "Execute mem inst after decryption! inst [sn:%lli]...\n",
+              inst->seqNum);
+        }
 
         DPRINTF(IEW, "Execute: Processing PC %s, [tid:%i] [sn:%llu].\n",
                 inst->pcState(), inst->threadNumber,inst->seqNum);
@@ -1201,6 +1224,18 @@ IEW::executeInsts()
 
                 if (inst->isTranslationDelayed() &&
                     fault == NoFault) {
+
+                    // This couldn't proceed due to decryption not finished
+                    // This will be retried after decryption is done
+                    // instead of being sent to issue queue
+                    if (!inst->isDoneDecryptingPointer()) {
+                        cryptoDelayedMemInsts.push(inst);
+                        DPRINTF(C3DEBUG,
+                        "Wait until decryption is done! inst [sn:%lli]...\n",
+                        inst->seqNum);
+                        continue;
+                    }
+
                     // A hw page table walk is currently going on; the
                     // instruction must be deferred.
                     DPRINTF(IEW, "Execute: Delayed translation, deferring "
@@ -1215,6 +1250,18 @@ IEW::executeInsts()
 
                 if (inst->isTranslationDelayed() &&
                     fault == NoFault) {
+
+                    // This couldn't proceed due to decryption not finished
+                    // This will be retried after decryption is done
+                    // instead of being sent to issue queue
+                    if (!inst->isDoneDecryptingPointer()) {
+                        cryptoDelayedMemInsts.push(inst);
+                        DPRINTF(C3DEBUG,
+                        "Wait until decryption is done! inst [sn:%lli]...\n",
+                        inst->seqNum);
+                        continue;
+                    }
+
                     // A hw page table walk is currently going on; the
                     // instruction must be deferred.
                     DPRINTF(IEW, "Execute: Delayed translation, deferring "
@@ -1231,6 +1278,18 @@ IEW::executeInsts()
 
                 if (inst->isTranslationDelayed() &&
                     fault == NoFault) {
+
+                    // This couldn't proceed due to decryption not finished
+                    // This will be retried after decryption is done
+                    // instead of being sent to issue queue
+                    if (!inst->isDoneDecryptingPointer()) {
+                        cryptoDelayedMemInsts.push(inst);
+                        DPRINTF(C3DEBUG,
+                        "Wait until decryption is done! inst [sn:%lli]...\n",
+                        inst->seqNum);
+                        continue;
+                    }
+
                     // A hw page table walk is currently going on; the
                     // instruction must be deferred.
                     DPRINTF(IEW, "Execute: Delayed translation, deferring "

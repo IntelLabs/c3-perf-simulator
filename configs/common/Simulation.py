@@ -527,11 +527,9 @@ def run(options, root, testsys, cpu_class):
             # simulation period
             if options.maxinsts:
                 switch_cpus[i].max_insts_any_thread = options.maxinsts
-            # yh+begin
             # simulation period
             if options.maxfcnts:
                 switch_cpus[i].max_fcnts_any_thread = options.maxfcnts
-            # yh+end
             # Add checker cpu if selected
             if options.checker:
                 switch_cpus[i].addCheckerCpu()
@@ -545,6 +543,20 @@ def run(options, root, testsys, cpu_class):
                 switch_cpus[
                     i
                 ].branchPred.indirectBranchPred = IndirectBPClass()
+            if options.pointer_decryption_delay:
+                switch_cpus[
+                    i
+                ].pointer_decryption_delay = options.pointer_decryption_delay
+            if options.data_keystream_delay:
+                switch_cpus[
+                    i
+                ].data_keystream_delay = options.data_keystream_delay
+            if options.enableSTLF:
+                switch_cpus[i].enableSTLF = options.enableSTLF
+            if options.enablePredTLB:
+                switch_cpus[i].enablePredTLB = options.enablePredTLB
+            if options.forceCryptoDelay:
+                switch_cpus[i].forceCryptoDelay = options.forceCryptoDelay
             switch_cpus[i].createThreads()
 
         # If elastic tracing is enabled attach the elastic trace probe

@@ -1,9 +1,10 @@
 #!/bin/bash
 
 ############ DIRECTORY VARIABLES: MODIFY ACCORDINGLY #############
-#Need to export GEM5_PATH and SIM_PATH
-GEM5_PATH=/home/yonghaek/c3-gem5
-SIM_PATH=/home/yonghaek/pinplay-scripts/PinPointsHome/Linux/bin
+#Need to export GEM5_PATH (gem5 home)
+GEM5_PATH=/c3-perf-simulator
+#Need to export SIM_PATH where SimPoint executable is located
+SIM_PATH=/c3-perf-simulator/pinplay-scripts/PinPointsHome/Linux/bin
 
 if [ -z ${GEM5_PATH+x} ];
 then
