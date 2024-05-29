@@ -1,9 +1,9 @@
-= C3 gem5
+= C3 gem5-based Performance Simulator
 
 [.lead]
 This is an experimental performance simulator for Cryptographic Capability Computing (C3).
 
-*_NOTE:* If NOT running gem5 inside the provided docker, clone this repository with --recurse-submodules - otherwise, many tests will not build._
+NOTE: If NOT running gem5 inside the provided docker, clone this repository with --recurse-submodules - otherwise, many tests will not build._
 
 == Building C3 gem5
 To build, run, and test the simulator inside a controlled Docker environment, follow the following steps:
@@ -31,8 +31,8 @@ To run a these tests, follow the steps below: +
 
 
 We are also including scripts to run *_SPEC CPU2017_* benchmarks on C3 gem5 for reproducing the results we have reported. +
-Please note that the results were obtained for specific versions of the binaries installed inside the docker, 
-and might change if any other version is used. Read *README_SPEC* for a detailed description of the steps to run these benchmarks.
+Please note that the results were obtained for specific versions of the binaries installed inside the docker,
+and might change if any other version is used. Read link:README_SPEC.adoc[] for a detailed description of the steps to run these benchmarks.
 
 '''
 
@@ -41,6 +41,9 @@ _The contents of this repository and linked repositories are solely for research
 _This material is based upon work supported by the Naval Information Warfare Center Pacific and the Defense Advanced Research Project Agency under Prototype Other Transaction Agreement No. N66001-23-9-4004. Any opinions, findings and conclusions or recommendations expressed in this material are those of the author(s) and do not necessarily reflect the views of the Naval Information Warfare Center Pacific or the Defense Advanced Research Project Agency_
 
 '''
+
+== Generic gem5 README:
+
 [.lead]
 This is the gem5 simulator.
 
