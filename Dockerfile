@@ -81,7 +81,7 @@ RUN pip3 install --no-cache-dir\
 
 WORKDIR $C3_GEM5_DIR
 COPY . .
-RUN git clone https://github.com/IntelLabs/c3-simulator && \
+RUN git clone -b harden-may2024-for-gem5 https://github.com/IntelLabs/c3-simulator && \
     cd $C3_GLIBC_DIR && \
     git clone -b harden-may2024 https://github.com/IntelLabs/c3-glibc src && \
     cd $C3_GEM5_DIR

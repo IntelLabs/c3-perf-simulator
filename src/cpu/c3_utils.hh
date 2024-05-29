@@ -81,7 +81,7 @@ class CCPointerEncoding
  public:
     CCPointerEncoding() = default;
     virtual inline ~CCPointerEncoding() = default;
-    bool isSimplified = false;
+    bool isSimplified = true;
     /**
      * @brief Encrypt an already decorated CA
      *
