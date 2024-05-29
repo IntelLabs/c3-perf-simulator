@@ -244,7 +244,6 @@ echo "" | tee -a $SCRIPT_OUT
 
 # Actually launch gem5!
 $GEM5_PATH/build/X86/gem5.opt \
-	--debug-flags=StatDumper \
 	--outdir=$OUTPUT_DIR $SCRIPT_IN \
 	--num-cpus=1 --mem-size=4GB \
 	--take-simpoint-checkpoint=$SIMPOINTS_FILE,$WEIGHTS_FILE,$SIMPOINT_INTERVAL_VAL,$WARMUP_LEN_VAL \

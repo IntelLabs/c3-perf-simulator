@@ -14,6 +14,7 @@ fi
 
 GEM5_PATH=/c3-perf-simulator          # Same as Dockerfile
 SPEC_ROOT=/spec2017                   # Same as run_docker_withSPEC.sh
+PINPLAY_PATH=/pinplay-tools/pinplay-scripts/PinPointsHome/Linux/bin
 SIMPOIONT_TESTS_DIR=$GEM5_PATH/tests/simpoint
 
 # These values have been written in easily readable format but converted to int
@@ -32,7 +33,7 @@ echo "Step1: Generating BBV for $1"
 ./1.profile_generate_bbv.sh $BENCHMARK $MAX_INST_COUNT $GEM5_PATH $SPEC_ROOT
 
 echo "STEP2: Generate Simpoint weights"
-./2.gen_simpoints_weights.sh $BENCHMARK $SIMPOINT_COUNT $GEM5_PATH $SPEC_ROOT
+./2.gen_simpoints_weights.sh $BENCHMARK $SIMPOINT_COUNT $GEM5_PATH $PINPLAY_PATH
 
 echo "Step3: Take checkpoints"
 ./3.take_checkpoints.sh $BENCHMARK $MAX_INST_COUNT $WARMUP_LEN $GEM5_PATH $SPEC_ROOT

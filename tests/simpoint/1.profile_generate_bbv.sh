@@ -63,7 +63,7 @@ fi
 
 
 if [[ "$BENCHMARK" == "perlbench_r" ]]; then
-  BENCHMARK_CODE="perlbench_r"
+  BENCHMARK_CODE="500.perlbench_r"
 	COMMAND_OPT="-I./lib checkspam.pl 2500 5 25 11 150 1 1 1 1"
 	OUTPUT_LOG="checkspam.2500.5.25.11.150.1.1.1.1.out"
 	ERROUT_LOG="checkspam.2500.5.25.11.150.1.1.1.1.err"
@@ -71,7 +71,7 @@ if [[ "$BENCHMARK" == "perlbench_r" ]]; then
 	#COMMAND_OPT="-I./lib splitmail.pl 6400 12 26 16 100 0 > splitmail.6400.12.26.16.100.0.out 2>> splitmail.6400.12.26.16.100.0.err"
 fi
 if [[ "$BENCHMARK" == "gcc_r" ]]; then
-  BENCHMARK_CODE="gcc_r"
+  BENCHMARK_CODE="502.gcc_r"
 	COMMAND_OPT="gcc-pp.c -O3 -finline-limit=0 -fif-conversion -fif-conversion2 -o gcc-pp.opts-O3_-finline-limit_0_-fif-conversion_-fif-conversion2.s"
 	OUTPUT_LOG="gcc-pp.opts-O3_-finlinelimit_0_-fif-conversion_-fif-conversion2.out"
 	ERROUT_LOG="gcc-pp.opts-O3_-finline-limit_0_-fif-conversion_-fif-conversion2.err"
@@ -81,49 +81,49 @@ if [[ "$BENCHMARK" == "gcc_r" ]]; then
 	#COMMAND_OPT="ref32.c -O3 -fselective-scheduling -fselective-scheduling2 -o ref32.opts-O3_-fselective-scheduling_-fselective-scheduling2.s > ref32.opts-O3_-fselectivescheduling_-fselective-scheduling2.out 2>> ref32.opts-O3_-fselective-scheduling_-fselective-scheduling2.err"
 fi
 if [[ "$BENCHMARK" == "mcf_r" ]]; then
-  BENCHMARK_CODE="mcf_r"
+  BENCHMARK_CODE="505.mcf_r"
 	COMMAND_OPT="inp.in"
 	OUTPUT_LOG="inp.out"
 	ERROUT_LOG="inp.err"
 fi
 if [[ "$BENCHMARK" == "namd_r" ]]; then
-  BENCHMARK_CODE="namd_r"
+  BENCHMARK_CODE="508.namd_r"
 	COMMAND_OPT="--input apoa1.input --output apoa1.ref.output --iterations 65"
 	OUTPUT_LOG="namd.out"
 	ERROUT_LOG="namd.err"
 fi
 if [[ "$BENCHMARK" == "parest_r" ]]; then
-  BENCHMARK_CODE="parest_r"
+  BENCHMARK_CODE="510.parest_r"
 	COMMAND_OPT="ref.prm"
 	OUTPUT_LOG="ref.out"
 	ERROUT_LOG="ref.err"
 fi
 if [[ "$BENCHMARK" == "povray_r" ]]; then
-  BENCHMARK_CODE="povray_r"
+  BENCHMARK_CODE="511.povray_r"
 	COMMAND_OPT="SPEC-benchmark-ref.ini"
 	OUTPUT_LOG="SPEC-benchmark-ref.stdout"
 	ERROUT_LOG="SPEC-benchmark-ref.stderr"
 fi
 if [[ "$BENCHMARK" == "lbm_r" ]]; then
-  BENCHMARK_CODE="lbm_r"
+  BENCHMARK_CODE="519.lbm_r"
 	COMMAND_OPT="2000 reference.dat 0 0 200_200_260_ldc.of"
 	OUTPUT_LOG="lbm.out"
 	ERROUT_LOG="lbm.err"
 fi
 if [[ "$BENCHMARK" == "omnetpp_r" ]]; then
-  BENCHMARK_CODE="omnetpp_r"
+  BENCHMARK_CODE="520.omnetpp_r"
 	COMMAND_OPT="-c General -r 0"
 	OUTPUT_LOG="omnetpp.General-0.out"
 	ERROUT_LOG="omnetpp.General-0.err"
 fi
 if [[ "$BENCHMARK" == "xalancbmk_r" ]]; then
-  BENCHMARK_CODE="xalancbmk_r"
+  BENCHMARK_CODE="523.xalancbmk_r"
 	COMMAND_OPT="-v t5.xml xalanc.xsl"
 	OUTPUT_LOG="ref-t5.out"
 	ERROUT_LOG="ref-t5.err"
 fi
 if [[ "$BENCHMARK" == "x264_r" ]]; then
-  BENCHMARK_CODE="x264_r"
+  BENCHMARK_CODE="525.x264_r"
 	COMMAND_OPT="--pass 1 --stats x264_stats.log --bitrate 1000 --frames 1000 -o BuckBunny_New.264 BuckBunny.yuv 1280x720"
 	OUTPUT_LOG="run_000-1000_x264_pass1.out"
 	ERROUT_LOG="run_000-1000_x264_pass1.err"
@@ -131,13 +131,13 @@ if [[ "$BENCHMARK" == "x264_r" ]]; then
 	#COMMAND_OPT="--seek 500 --dumpyuv 200 --frames 1250 -o BuckBunny_New.264 BuckBunny.yuv 1280x720 > run_0500-1250_x264.out 2>> run_0500-1250_x264.err"
 fi
 if [[ "$BENCHMARK" == "blender_r" ]]; then
-  BENCHMARK_CODE="blender_r"
+  BENCHMARK_CODE="526.blender_r"
 	COMMAND_OPT="sh3_no_char.blend --render-output sh3_no_char_ --threads 1 -b -F RAWTGA -s 849 -e 849 -a"
 	OUTPUT_LOG="sh3_no_char.849.spec.out"
 	ERROUT_LOG="sh3_no_char.849.spec.err"
 fi
 if [[ "$BENCHMARK" == "deepsjeng_r" ]]; then
-  BENCHMARK_CODE="deepsjeng_r"
+  BENCHMARK_CODE="531.deepsjeng_r"
 	COMMAND_OPT="ref.txt"
 	OUTPUT_LOG="ref.out"
 	ERROUT_LOG="ref.err"
@@ -149,19 +149,19 @@ if [[ "$BENCHMARK" == "leela_r" ]]; then
   ERROUT_LOG="ref.err"
 fi
 if [[ "$BENCHMARK" == "imagick_r" ]]; then
-  BENCHMARK_CODE="imagick_r"
+  BENCHMARK_CODE="538.imagick_r"
 	COMMAND_OPT=" -limit disk 0 refrate_input.tga -edge 41 -resample 181% -emboss 31 -colorspace YUV -mean-shift 19x19+15% -resize 30% refrate_output.tga"
 	OUTPUT_LOG="refrate_convert.out"
 	ERROUT_LOG="refrate_convert.err"
 fi
 if [[ "$BENCHMARK" == "nab_r" ]]; then
-  BENCHMARK_CODE="nab_r"
+  BENCHMARK_CODE="544.nab_r"
 	COMMAND_OPT="3j1n 20140317 220"
 	OUTPUT_LOG="3j1n.out"
 	ERROUT_LOG="3j1n.err"
 fi
 if [[ "$BENCHMARK" == "xz_r" ]]; then
-  BENCHMARK_CODE="xz_r"
+  BENCHMARK_CODE="557.xz_r"
 	COMMAND_OPT="cld.tar.xz 160 19cf30ae51eddcbefda78dd06014b4b96281456e078ca7c13e1c0c9e6aaea8dff3efb4ad6b0456697718cede6bd5454852652806a657bb56e07d61128434b474 59796407 61004416 6"
 	OUTPUT_LOG="cld.tar-160-6.out"
 	ERROUT_LOG="cld.tar-160-6.err"
@@ -176,7 +176,7 @@ if [[ "$BENCHMARK_CODE" == "none" ]]; then
 fi
 ##################################################################
 
-OUTPUT_DIR=$GEM5_PATH/tests/simpoint/output/$BENCHMARK_CODE
+OUTPUT_DIR=/outputs/simpoint/$BENCHMARK_CODE    # Store outputs in the mounted outputs directory
 
 echo "output directory: " $OUTPUT_DIR
 

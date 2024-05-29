@@ -17,7 +17,7 @@ fi
 ############ DIRECTORY VARIABLES: MODIFY ACCORDINGLY #############
 #Need to export GEM5_PATH and SIM_PATH
 GEM5_PATH=${3:-"/c3-perf-simulator"}          # Same as Dockerfile
-SIM_PATH=${4:-"/pinplay-scripts/PinPointsHome/Linux/bin"}
+SIM_PATH=${4:-"/pinplay-tools/pinplay-scripts/PinPointsHome/Linux/bin"}
 
 BENCHMARK=$1                # Benchmark name, e.g. gcc_r
 MAX_SIMPOINTS=${2:-3}       # Maximum number of simpoints to be collected. Default = 3

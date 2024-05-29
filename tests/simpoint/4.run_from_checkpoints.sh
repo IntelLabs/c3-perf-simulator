@@ -17,15 +17,15 @@ fi
 
 ############ DIRECTORY VARIABLES: MODIFY ACCORDINGLY #############
 #Need to export GEM5_PATH and SPEC_PATH
-GEM5_PATH=${2:-"/c3-perf-simulator"}          # Same as Dockerfile
-SPEC_ROOT=${3:-"/spec2017"}                   # Same as run_docker_withSPEC.sh
+GEM5_PATH=${4:-"/c3-perf-simulator"}          # Same as Dockerfile
+SPEC_ROOT=${5:-"/spec2017"}                   # Same as run_docker_withSPEC.sh
 SPEC_PATH=$SPEC_ROOT/benchspec/CPU
 SCRIPT_IN=$GEM5_PATH/configs/example/se.py
 LABEL=intel_spec_simpoints
 
 BENCHMARK=$1                    # Benchmark name, e.g. bzip2
 CONFIG=${2:-"base"}
-SIMPOINT_COUNT=${5:-3}
+SIMPOINT_COUNT=${3:-3}
 
 if [ -z ${GEM5_PATH+x} ];
 then

@@ -27,5 +27,5 @@ cd $SPEC_ROOT/bin
 echo "Get PinPoints"
 cd /
 git clone https://github.com/intel/pinplay-tools.git
-cd pinplay-scripts/PinPointsHome/Linux/bin/
+cd /pinplay-tools/pinplay-scripts/PinPointsHome/Linux/bin
 make
