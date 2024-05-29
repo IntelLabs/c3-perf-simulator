@@ -182,7 +182,7 @@ LSQUnit::completeDataAccess(PacketPtr pkt)
             }
 
             // Data Decryption functionality
-            bool do_actual_decryption = false;
+            bool do_actual_decryption = !(cpu->cryptoModule.isSimplified);
             if (do_actual_decryption) {
                 unsigned size_pkt = pkt->getSize();
                 uint8_t *data_pkt = pkt->data;
@@ -1855,7 +1855,7 @@ LSQUnit::write(LSQRequest *request, uint8_t *data, ssize_t store_idx)
         !request->req()->isCacheMaintenance() &&
         !request->req()->isAtomic()) {
 
-            bool do_actual_encryption = false;
+            bool do_actual_encryption = !(cpu->cryptoModule.isSimplified);
             // Encrypt data if the request has a CA
             if (do_actual_encryption && request->_inst->encodedPointer()) {
                 bytes_mod =
