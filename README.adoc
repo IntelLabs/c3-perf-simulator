@@ -1,0 +1,76 @@
+= C3 gem5
+
+[.lead]
+This is an experimental performance simulator for Cryptographic Capability Computing (C3).
+
+*_NOTE:* If NOT running gem5 inside the provided docker, clone this repository with --recurse-submodules - otherwise, many tests will not build._
+
+== Building C3 gem5
+To build, run, and test the simulator inside a controlled Docker environment, follow the following steps:
+
+.   *Run build_docker.sh* +
+    This script builds the c3-gem5-docker docker image, which has a copy of the gem5 source code and the run_blowfish test script. +
+    Once the docker image is built, a container will be spawned and the shell will be transferred to the running container.
+.   *Run run_blowfish.sh inside the docker container* +
+    This script builds the blowfish test and runs it in inside gem5 in five configurations. The results are then summarized for comparison. +
+    The configurations are as listed: +
+..      *RUN0*:	No C3
+..      *RUN1*:	C3, Heap addresses encryption   , No PredTLB
+..      *RUN2*:	C3, All addresses encryption    , No PredTLB
+..      *RUN3*:	C3, Heap addresses encryption   , PredTLB
+..      *RUN4*:	C3, All addresses encryption    , PredTLB
+
+The Docker image will have an operational copy of C3 gem5 and can be used for further testing and demonstration as required.
+
+We have a batch of tests to verify basic functionality of the gem5-based C3 performance simulator. +
+To run a these tests, follow the steps below: +
+
+.   *CMD*:  cd tests/c3_tests
+.   *CMD*:  yes | make test +
+    This will build gem5 and the custom GLIBC (both already built inside the docker) and run our tests.
+
+
+We are also including scripts to run *_SPEC CPU2017_* benchmarks on C3 gem5 for reproducing the results we have reported. +
+Please note that the results were obtained for specific versions of the binaries installed inside the docker, 
+and might change if any other version is used. Read *README_SPEC* for a detailed description of the steps to run these benchmarks.
+
+'''
+
+_The contents of this repository and linked repositories are solely for research purposes and may contain software with vulnerabilities, such as outdated libraries. Do not use in production._
+
+_This material is based upon work supported by the Naval Information Warfare Center Pacific and the Defense Advanced Research Project Agency under Prototype Other Transaction Agreement No. N66001-23-9-4004. Any opinions, findings and conclusions or recommendations expressed in this material are those of the author(s) and do not necessarily reflect the views of the Naval Information Warfare Center Pacific or the Defense Advanced Research Project Agency_
+
+'''
+[.lead]
+This is the gem5 simulator.
+
+The main website can be found at http://www.gem5.org
+
+A good starting point is http://www.gem5.org/about, and for more information about building the simulator and getting started please see http://www.gem5.org/documentation and http://www.gem5.org/documentation/learning_gem5/introduction.
+
+To build gem5, you will need the following software: g++ or clang, Python (gem5 links in the Python interpreter), SCons, zlib, m4, and lastly protobuf if you want trace capture and playback support. +
+Please see http://www.gem5.org/documentation/general_docs/building for more details concerning the minimum versions of these tools.
+
+Once you have all dependencies resolved, type `scons build/<CONFIG>/gem5.opt` where CONFIG is one of the options in build_opts like `ARM`, `NULL`, `MIPS`, `POWER`, `SPARC`, `X86`, `Garnet_standalone`, etc. This will build an
+optimized version of the gem5 binary (gem5.opt) with the the specified configuration. +
+See http://www.gem5.org/documentation/general_docs/building for more details and options.
+
+The main source tree includes these subdirectories:
+
+   - _build_opts_: pre-made default configurations for gem5
+   - _build_tools_: tools used internally by gem5's build process.
+   - _configs_: example simulation configuration scripts
+   - _ext_: less-common external packages needed to build gem5
+   - _include_: include files for use in other programs
+   - _site_scons_: modular components of the build system
+   - _src_: source code of the gem5 simulator
+   - _system_: source for some optional system software for simulated systems
+   - _tests_: regression tests
+   - _util_: useful utility programs and files
+
+To run full-system simulations, you may need compiled system firmware, kernel binaries and one or more disk images, depending on gem5's configuration and what type of workload you're trying to run. Many of those resources can be downloaded from http://resources.gem5.org, and/or from the git repository here: +
+https://gem5.googlesource.com/public/gem5-resources/
+
+If you have questions, please send mail to gem5-users@gem5.org
+
+Enjoy using gem5 and please share your modifications and extensions.
