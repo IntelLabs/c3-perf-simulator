@@ -8,4 +8,5 @@ if [[ "$ARGC" < 1 ]]; then # Bad number of arguments.
 	exit
 fi
 
-docker run -u 0 --volume ./outputs:/outputs --volume $1:$SPEC_ROOT -it $DOCKER_NAME
+ln -s $1 ./spec2017
+docker run -u 0 --volume ./outputs:/outputs --volume ./spec2017:$SPEC_ROOT -it $DOCKER_NAME

@@ -5,7 +5,7 @@ This is an experimental performance simulator for Cryptographic Capability Compu
 
 NOTE: If NOT running gem5 inside the provided docker, clone this repository with --recurse-submodules - otherwise, many tests will not build._
 
-== Building C3 gem5
+== Building and Testing C3 gem5
 To build, run, and test the simulator inside a controlled Docker environment, follow the following steps:
 
 .   *Run build_docker.sh* +
@@ -33,6 +33,10 @@ To run a these tests, follow the steps below: +
 We are also including scripts to run *_SPEC CPU2017_* benchmarks on C3 gem5 for reproducing the results we have reported. +
 Please note that the results were obtained for specific versions of the binaries installed inside the docker,
 and might change if any other version is used. Read link:README_SPEC.adoc[] for a detailed description of the steps to run these benchmarks.
+
+NOTE: The Dockerfile uses fixed versions for the base image and certain packages necessary for building C3 gem5 reliably. These versions of base image and packages might become unavailable in the future and would have to be updated manually. +
+To update the Docker base image, replace the _digest_ in the first line in the Dockerfile (FROM ...) with one corresponding to an available base image. Alternatively, it's possible to use something like `FROM mcr.microsoft.com/devcontainers/base:ubuntu-20.04` to skip looking for a relevant _digest_. +
+To update the fixed packages, simply update the version mentioned in the Dockerfile in the `apt-get install` command.
 
 '''
 
