@@ -40,6 +40,8 @@ Set the `label` variable to `%{label}-m%{bits}` _(line#96)_
     PORTABILITY = -L /c3-perf-simulator/c3-simulator/glibc/glibc-2.30_install/lib -I /c3-perf-simulator/c3-simulator/glibc/glibc-2.30_install/include -Wl,--rpath=/c3-perf-simulator/c3-simulator/glibc/glibc-2.30_install/lib -Wl,--dynamic-linker=/c3-perf-simulator/c3-simulator/glibc/glibc-2.30_install/lib/ld-linux-x86-64.so.2 -mno-avx512f -mno-avx512er -mno-avx512cd -mno-avx512pf -mno-avx512dq -mno-avx512bw -mno-avx512vl -mno-avx512ifma -mno-avx512vbmi -mno-avx512vbmi2 -mno-avx512vnni -mno-avx512bitalg -mno-avx512vpopcntdq -mno-sse4a -mno-avx -mno-sse3 -mno-ssse3 -mno-sse4.1 -mno-sse4.2 -mno-sse4 -static
 ```
 
+The above changes were necessary to disable gcc from generating vector instructions during compilation. The Gem5 simulator currently does not support Advanced Vector Extensions (AVX) which are a set of SIMD extensions to the x86 instruction set architecture.
+
 . Append the entire contents of *tests/simpoint/spec_peak_hashes.txt* to the end of this configuration file.
 
 . Save this configuration file as *tests/simpoint/c3-spec-config.cfg*
