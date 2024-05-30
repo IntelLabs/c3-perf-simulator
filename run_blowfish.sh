@@ -15,22 +15,22 @@ $GEM5_BUILD_DIR/gem5.opt --outdir=$GEM5_C3_TEST_DIR/blowfish_c3 $GEM5_DIR/config
 echo
 echo
 echo "RUN1: C3, Heap only, No PredTLB"
-$GEM5_BUILD_DIR/gem5.opt --outdir=$GEM5_C3_TEST_DIR/blowfish_c3 $GEM5_DIR/configs/example/se.py --cpu-type=O3_X86_icelake_1 --caches -e $GEM5_DIR/c3_no_wrap_enable.env -c $GEM5_C3_TEST_DIR/mibench/security/blowfish/bf -o 'e /c3-perf-simulator/tests/c3_tests/mibench/security/blowfish/input_small.asc /c3-perf-simulator/tests/c3_tests/bf_c3.enc 1234567890abcdeffedcba0987654321' 2>&1 | tee $OUTPUT_DIR/blowfish_run1.txt
+$GEM5_BUILD_DIR/gem5.opt --outdir=$GEM5_C3_TEST_DIR/blowfish_c3 $GEM5_DIR/configs/example/se.py --cpu-type=O3_X86_icelake_c3 --caches -e $GEM5_DIR/c3_no_wrap_enable.env --pointer-decryption-delay 3 --data-keystream-delay 4 -c $GEM5_C3_TEST_DIR/mibench/security/blowfish/bf -o 'e /c3-perf-simulator/tests/c3_tests/mibench/security/blowfish/input_small.asc /c3-perf-simulator/tests/c3_tests/bf_c3.enc 1234567890abcdeffedcba0987654321' 2>&1 | tee $OUTPUT_DIR/blowfish_run1.txt
 
 echo
 echo
 echo "RUN2: C3, All addresses, No PredTLB"
-$GEM5_BUILD_DIR/gem5.opt --outdir=$GEM5_C3_TEST_DIR/blowfish_c3 $GEM5_DIR/configs/example/se.py --cpu-type=O3_X86_icelake_1 --caches -e $GEM5_DIR/c3_no_wrap_enable.env --forceCryptoDelay -c $GEM5_C3_TEST_DIR/mibench/security/blowfish/bf -o 'e /c3-perf-simulator/tests/c3_tests/mibench/security/blowfish/input_small.asc /c3-perf-simulator/tests/c3_tests/bf_c3.enc 1234567890abcdeffedcba0987654321' 2>&1 | tee $OUTPUT_DIR/blowfish_run2.txt
+$GEM5_BUILD_DIR/gem5.opt --outdir=$GEM5_C3_TEST_DIR/blowfish_c3 $GEM5_DIR/configs/example/se.py --cpu-type=O3_X86_icelake_c3 --caches -e $GEM5_DIR/c3_no_wrap_enable.env --pointer-decryption-delay 3 --data-keystream-delay 4 --forceCryptoDelay -c $GEM5_C3_TEST_DIR/mibench/security/blowfish/bf -o 'e /c3-perf-simulator/tests/c3_tests/mibench/security/blowfish/input_small.asc /c3-perf-simulator/tests/c3_tests/bf_c3.enc 1234567890abcdeffedcba0987654321' 2>&1 | tee $OUTPUT_DIR/blowfish_run2.txt
 
 echo
 echo
 echo "RUN3: C3, Heap only, PredTLB"
-$GEM5_BUILD_DIR/gem5.opt --outdir=$GEM5_C3_TEST_DIR/blowfish_c3 $GEM5_DIR/configs/example/se.py --cpu-type=O3_X86_icelake_1 --caches -e $GEM5_DIR/c3_no_wrap_enable.env --enablePredTLB -c $GEM5_C3_TEST_DIR/mibench/security/blowfish/bf -o 'e /c3-perf-simulator/tests/c3_tests/mibench/security/blowfish/input_small.asc /c3-perf-simulator/tests/c3_tests/bf_c3.enc 1234567890abcdeffedcba0987654321' 2>&1 | tee $OUTPUT_DIR/blowfish_run3.txt
+$GEM5_BUILD_DIR/gem5.opt --outdir=$GEM5_C3_TEST_DIR/blowfish_c3 $GEM5_DIR/configs/example/se.py --cpu-type=O3_X86_icelake_c3 --caches -e $GEM5_DIR/c3_no_wrap_enable.env --pointer-decryption-delay 3 --data-keystream-delay 4 --enablePredTLB -c $GEM5_C3_TEST_DIR/mibench/security/blowfish/bf -o 'e /c3-perf-simulator/tests/c3_tests/mibench/security/blowfish/input_small.asc /c3-perf-simulator/tests/c3_tests/bf_c3.enc 1234567890abcdeffedcba0987654321' 2>&1 | tee $OUTPUT_DIR/blowfish_run3.txt
 
 echo
 echo
 echo "RUN4: C3, All addresses, PredTLB"
-$GEM5_BUILD_DIR/gem5.opt --outdir=$GEM5_C3_TEST_DIR/blowfish_c3 $GEM5_DIR/configs/example/se.py --cpu-type=O3_X86_icelake_1 --caches -e $GEM5_DIR/c3_no_wrap_enable.env --forceCryptoDelay --enablePredTLB -c $GEM5_C3_TEST_DIR/mibench/security/blowfish/bf -o 'e /c3-perf-simulator/tests/c3_tests/mibench/security/blowfish/input_small.asc /c3-perf-simulator/tests/c3_tests/bf_c3.enc 1234567890abcdeffedcba0987654321' 2>&1 | tee $OUTPUT_DIR/blowfish_run4.txt
+$GEM5_BUILD_DIR/gem5.opt --outdir=$GEM5_C3_TEST_DIR/blowfish_c3 $GEM5_DIR/configs/example/se.py --cpu-type=O3_X86_icelake_c3 --caches -e $GEM5_DIR/c3_no_wrap_enable.env --pointer-decryption-delay 3 --data-keystream-delay 4 --forceCryptoDelay --enablePredTLB -c $GEM5_C3_TEST_DIR/mibench/security/blowfish/bf -o 'e /c3-perf-simulator/tests/c3_tests/mibench/security/blowfish/input_small.asc /c3-perf-simulator/tests/c3_tests/bf_c3.enc 1234567890abcdeffedcba0987654321' 2>&1 | tee $OUTPUT_DIR/blowfish_run4.txt
 
 echo
 echo
