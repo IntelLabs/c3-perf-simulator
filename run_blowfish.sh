@@ -10,7 +10,7 @@ make mibench/security/blowfish/bf
 echo
 echo
 echo "RUN0: NO C3"
-$GEM5_BUILD_DIR/gem5.opt --outdir=$GEM5_C3_TEST_DIR/blowfish_c3 $GEM5_DIR/configs/example/se.py --cpu-type=O3_X86_icelake_1 --caches -c $GEM5_C3_TEST_DIR/mibench/security/blowfish/bf -o 'e /c3-perf-simulator/tests/c3_tests/mibench/security/blowfish/input_small.asc /c3-perf-simulator/tests/c3_tests/bf_c3.enc 1234567890abcdeffedcba0987654321' 2>&1| tee $OUTPUT_DIR/blowfish_run0.txt
+$GEM5_BUILD_DIR/gem5.opt --outdir=$GEM5_C3_TEST_DIR/blowfish_c3 $GEM5_DIR/configs/example/se.py --cpu-type=O3_X86_icelake_c3 --caches -c $GEM5_C3_TEST_DIR/mibench/security/blowfish/bf -o 'e /c3-perf-simulator/tests/c3_tests/mibench/security/blowfish/input_small.asc /c3-perf-simulator/tests/c3_tests/bf_c3.enc 1234567890abcdeffedcba0987654321' 2>&1| tee $OUTPUT_DIR/blowfish_run0.txt
 
 echo
 echo
