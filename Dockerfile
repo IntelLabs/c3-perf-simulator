@@ -20,7 +20,7 @@ RUN apt-get update && apt-get upgrade -y \
     autoconf \
     automake \
     bison \
-    build-essential=12.8 \
+    build-essential=12.8ubuntu1.1 \
     clang-format \
     clang-tidy \
     wget \
@@ -28,8 +28,8 @@ RUN apt-get update && apt-get upgrade -y \
     dwarves \
     flex \
     gawk \
-    gcc-9=9.4.0 \
-    g++-9=9.4.0 \
+    gcc-9=9.4.0-1ubuntu1~20.04.2 \
+    g++-9=9.4.0-1ubuntu1~20.04.2 \
     git \
     graphviz \
     libatk1.0-dev \
@@ -40,8 +40,8 @@ RUN apt-get update && apt-get upgrade -y \
     libtinfo-dev \
     llvm \
     ninja-build \
-    python3=3.8.10 \
-    python3-pip=20.0.2 \
+    python3=3.8.2-0ubuntu2 \
+    python3-pip=20.0.2-5ubuntu1.10 \
     zstd \
     bc \
     cpio \
@@ -57,9 +57,9 @@ RUN apt-get update && apt-get upgrade -y \
     zlib1g-dev \
     libprotobuf-dev \
     protobuf-compiler \
-    python3-dev=3.8.2 \
+    python3-dev=3.8.2-0ubuntu2 \
     libgoogle-perftools-dev \
-    libprotoc-dev=3.6.1.3 \
+    libprotoc-dev=3.6.1.3-2ubuntu5.2 \
     python-is-python3 \
     libboost-all-dev \
     libhdf5-serial-dev \
