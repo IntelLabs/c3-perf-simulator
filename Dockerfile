@@ -1,4 +1,5 @@
-FROM mcr.microsoft.com/devcontainers/base:ubuntu-20.04
+FROM mcr.microsoft.com/devcontainers/base@sha256:acdce4f55335a974812238e983619f1aeae9894e05ee9c7a79fc2c1b9f8d95d1
+
 ARG DEBIAN_FRONTEND=noninteractive
 
 ARG C3_USER_UID
@@ -19,7 +20,7 @@ RUN apt-get update && apt-get upgrade -y \
     autoconf \
     automake \
     bison \
-    build-essential \
+    build-essential=12.8ubuntu1.1 \
     clang-format \
     clang-tidy \
     wget \
@@ -27,8 +28,8 @@ RUN apt-get update && apt-get upgrade -y \
     dwarves \
     flex \
     gawk \
-    gcc-9 \
-    g++-9 \
+    gcc-9=9.4.0-1ubuntu1~20.04.2 \
+    g++-9=9.4.0-1ubuntu1~20.04.2 \
     git \
     graphviz \
     libatk1.0-dev \
@@ -39,8 +40,8 @@ RUN apt-get update && apt-get upgrade -y \
     libtinfo-dev \
     llvm \
     ninja-build \
-    python3 \
-    python3-pip \
+    python3=3.8.2-0ubuntu2 \
+    python3-pip=20.0.2-5ubuntu1.10 \
     zstd \
     bc \
     cpio \
@@ -56,9 +57,9 @@ RUN apt-get update && apt-get upgrade -y \
     zlib1g-dev \
     libprotobuf-dev \
     protobuf-compiler \
-    python3-dev \
+    python3-dev=3.8.2-0ubuntu2 \
     libgoogle-perftools-dev \
-    libprotoc-dev \
+    libprotoc-dev=3.6.1.3-2ubuntu5.2 \
     python-is-python3 \
     libboost-all-dev \
     libhdf5-serial-dev \
@@ -80,14 +81,14 @@ RUN pip3 install --no-cache-dir\
 
 WORKDIR $C3_GEM5_DIR
 COPY . .
-RUN git clone https://github.com/IntelLabs/c3-simulator && \
+RUN git clone -b harden-may2024-for-gem5 https://github.com/IntelLabs/c3-simulator && \
     cd $C3_GLIBC_DIR && \
-    git clone -b glibc-nowrap https://github.com/IntelLabs/c3-glibc src && \
+    git clone -b harden-may2024 https://github.com/IntelLabs/c3-glibc src && \
     cd $C3_GEM5_DIR
 
 RUN (yes || true) | scons build/X86/gem5.opt -j8
 
-RUN cd $C3_GLIBC_DIR && ./make_glibc.sh
+RUN cd $C3_GLIBC_DIR && CC_NO_WRAP_ENABLE=1 ./make_glibc.sh
 
 RUN cd $C3_GEM5_DIR/tests/c3_tests && \
     git clone https://github.com/embecosm/mibench.git && \

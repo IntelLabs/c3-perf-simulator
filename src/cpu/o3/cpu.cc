@@ -1625,9 +1625,9 @@ CPU::pushRequest(const DynInstPtr& inst, bool isLoad, uint8_t *data,
             "(Magically) decrypting requested address %x for inst [sn:%lli]\n",
             addr, inst->seqNum);
 
+            inst->_encoded_la = addr;
             addr = inst->cpu->cryptoModule.decode_pointer(addr);
             DPRINTF(C3DEBUG, "got %x.\n", addr);
-            inst->_encoded_la = addr;
         }
 
         // If forceCryptoDelay enabled, consider all accesses are CA-based
