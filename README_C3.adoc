@@ -3,7 +3,7 @@
 [.lead]
 This is an experimental performance simulator for Cryptographic Capability Computing (C3).
 
-NOTE: If NOT running gem5 inside the provided docker, clone this repository with --recurse-submodules - otherwise, many tests will not build._
+NOTE: If NOT running gem5 inside the provided docker, clone this repository with --recurse-submodules - otherwise, many tests will not build.
 
 == Building and Testing C3 gem5
 To build, run, and test the simulator inside a controlled Docker environment, follow the following steps:

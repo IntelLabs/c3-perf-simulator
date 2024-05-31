@@ -1,7 +1,7 @@
 #!/bin/bash
 SPEC_ROOT=${1:-"/spec2017"}
 
-echo "Build and Run SPEC becnhamarks natively"
+echo "Build and Run SPEC becnhmarks natively"
 cp tests/simpoint/c3-spec-config.cfg $SPEC_ROOT/config/
 cd $SPEC_ROOT/bin
 
