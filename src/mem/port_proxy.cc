@@ -39,6 +39,7 @@
 
 #include "base/chunk_generator.hh"
 #include "cpu/thread_context.hh"
+#include "cpu/base.hh"
 #include "mem/port.hh"
 
 namespace gem5
@@ -47,7 +48,9 @@ namespace gem5
 PortProxy::PortProxy(ThreadContext *tc, unsigned int cache_line_size) :
     PortProxy([tc](PacketPtr pkt)->void { tc->sendFunctional(pkt); },
         cache_line_size)
-{}
+{
+    this->_tc = tc;
+}
 
 PortProxy::PortProxy(const RequestPort &port, unsigned int cache_line_size) :
     PortProxy([&port](PacketPtr pkt)->void { port.sendFunctional(pkt); },
@@ -58,10 +61,16 @@ void
 PortProxy::readBlobPhys(Addr addr, Request::Flags flags,
                         void *p, int size) const
 {
-    // Encrypted pointers can be passed to syscalls
-    // Those should be decrypted before being used
-    addr = (Addr) (((uint64_t) addr << 16) >> 16);
-    p = (void *) (((uint64_t) p << 16) >> 16);
+    if (_tc) {
+        if (_tc->getCpuPtr()) {
+            if (addr & 0xffff000000000000) {  // if it's a CA...
+                addr = _tc->getCpuPtr()->cryptoModule.decode_pointer(addr);
+            }
+            if ((uint64_t) p & 0xffff000000000000) {
+                p = (void*) (_tc->getCpuPtr()->cryptoModule.decode_pointer((uint64_t) p));
+            }
+        }
+    }
     for (ChunkGenerator gen(addr, size, _cacheLineSize); !gen.done();
          gen.next()) {
 
@@ -77,12 +86,17 @@ PortProxy::readBlobPhys(Addr addr, Request::Flags flags,
 
 void
 PortProxy::writeBlobPhys(Addr addr, Request::Flags flags,
-                         const void *p, int size) const
-{
-    // Encrypted pointers can be passed to syscalls
-    // Those should be decrypted before being used
-    addr = (Addr) (((uint64_t) addr << 16) >> 16);
-    p = (void *) (((uint64_t) p << 16) >> 16);
+                         const void *p, int size) const{
+    if (_tc) {
+        if (_tc->getCpuPtr()) {
+            if (addr & 0xffff000000000000) {  // if it's a CA...
+                addr = _tc->getCpuPtr()->cryptoModule.decode_pointer(addr);
+            }
+            if ((uint64_t) p & 0xffff000000000000) {
+                p = (void*) (_tc->getCpuPtr()->cryptoModule.decode_pointer((uint64_t) p));
+            }
+        }
+    }
     for (ChunkGenerator gen(addr, size, _cacheLineSize); !gen.done();
          gen.next()) {
 
@@ -100,9 +114,13 @@ void
 PortProxy::memsetBlobPhys(Addr addr, Request::Flags flags,
                           uint8_t v, int size) const
 {
-    // Encrypted pointers can be passed to syscalls
-    // Those should be decrypted before being used
-    addr = (Addr) (((uint64_t) addr << 16) >> 16);
+    if (_tc) {
+        if (_tc->getCpuPtr()) {
+            if (addr & 0xffff000000000000) {  // if it's a CA...
+                addr = _tc->getCpuPtr()->cryptoModule.decode_pointer(addr);
+            }
+        }
+    }
     // quick and dirty...
     uint8_t *buf = new uint8_t[size];
 
@@ -115,9 +133,13 @@ PortProxy::memsetBlobPhys(Addr addr, Request::Flags flags,
 bool
 PortProxy::tryWriteString(Addr addr, const char *str) const
 {
-    // Encrypted pointers can be passed to syscalls
-    // Those should be decrypted before being used
-    addr = (Addr) (((uint64_t) addr << 16) >> 16);
+    if (_tc) {
+        if (_tc->getCpuPtr()) {
+            if (addr & 0xffff000000000000) {  // if it's a CA...
+                addr = _tc->getCpuPtr()->cryptoModule.decode_pointer(addr);
+            }
+        }
+    }
     do {
         if (!tryWriteBlob(addr++, str, 1))
             return false;
@@ -128,9 +150,13 @@ PortProxy::tryWriteString(Addr addr, const char *str) const
 bool
 PortProxy::tryReadString(std::string &str, Addr addr) const
 {
-    // Encrypted pointers can be passed to syscalls
-    // Those should be decrypted before being used
-    addr = (Addr) (((uint64_t) addr << 16) >> 16);
+    if (_tc) {
+        if (_tc->getCpuPtr()) {
+            if (addr & 0xffff000000000000) {  // if it's a CA...
+                addr = _tc->getCpuPtr()->cryptoModule.decode_pointer(addr);
+            }
+        }
+    }
     while (true) {
         uint8_t c;
         if (!tryReadBlob(addr++, &c, 1))
@@ -144,9 +170,13 @@ PortProxy::tryReadString(std::string &str, Addr addr) const
 bool
 PortProxy::tryReadString(char *str, Addr addr, size_t maxlen) const
 {
-    // Encrypted pointers can be passed to syscalls
-    // Those should be decrypted before being used
-    addr = (Addr) (((uint64_t) addr << 16) >> 16);
+    if (_tc) {
+        if (_tc->getCpuPtr()) {
+            if (addr & 0xffff000000000000) {  // if it's a CA...
+                addr = _tc->getCpuPtr()->cryptoModule.decode_pointer(addr);
+            }
+        }
+    }
     assert(maxlen);
     while (maxlen--) {
         if (!tryReadBlob(addr++, str, 1))

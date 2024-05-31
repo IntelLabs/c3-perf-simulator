@@ -1,0 +1,132 @@
+diff -urN -x '.*' -x build safeside-unmod/CMakeLists.txt safeside-ptrenc/CMakeLists.txt
+--- safeside-unmod/CMakeLists.txt	2024-05-28 12:23:12.367249481 +0000
++++ safeside-ptrenc/CMakeLists.txt	2024-05-28 13:25:23.525732169 +0000
+@@ -8,7 +8,7 @@
+ project(safeside VERSION 0.1.0 LANGUAGES C CXX)
+ 
+ # Use C++11 without extensions
+-set(CMAKE_CXX_STANDARD 11)
++set(CMAKE_CXX_STANDARD 14)
+ set(CMAKE_CXX_EXTENSIONS off)
+ 
+ add_subdirectory(benchmarks)
+diff -urN -x '.*' -x build safeside-unmod/demos/CMakeLists.txt safeside-ptrenc/demos/CMakeLists.txt
+--- safeside-unmod/demos/CMakeLists.txt	2024-05-28 12:23:12.367249481 +0000
++++ safeside-ptrenc/demos/CMakeLists.txt	2024-05-28 13:14:19.376001882 +0000
+@@ -1,3 +1,5 @@
++add_compile_options(-std=c++14)
++
+ # Enable (or at least don't disable) some optimizations in all builds.
+ # Without optimizations, it can be difficult to fit enough useful code into the
+ # speculative execution window.
+@@ -111,7 +113,7 @@
+       ""  # boolean options
+       ""  # one-value arguments
+       "SYSTEMS;PROCESSORS;ADDITIONAL_SOURCES"  # multi-value arguments
+-      ${ARGN}  # arguments to parse -- ARGN excludes already-named arguments
++      ${ARGN} # arguments to parse -- ARGN excludes already-named arguments
+   )
+ 
+   if (DEFINED ARG_SYSTEMS)
+@@ -130,8 +132,11 @@
+   target_link_libraries(${demo_name} safeside)
+ endfunction()
+ 
++set(C3SIM ${CMAKE_CURRENT_SOURCE_DIR}/../../../../c3-simulator)
++include_directories(${C3SIM})
++
+ # Spectre V1 PHT SA -- mistraining PHT in the same address space
+-add_demo(spectre_v1_pht_sa)
++add_demo(spectre_v1_pht_sa ADDITIONAL_SOURCES ${C3SIM}/crypto/bipbip.h ${C3SIM}/crypto/bipbip.cpp ${C3SIM}/malloc/cc_globals.h ${C3SIM}/crypto/cc_encoding.h)
+ 
+ # Spectre V1 BTB SA -- mistraining BTB in the same address space
+ add_demo(spectre_v1_btb_sa)
+diff -urN -x '.*' -x build safeside-unmod/demos/local_content.h safeside-ptrenc/demos/local_content.h
+--- safeside-unmod/demos/local_content.h	2024-05-28 12:23:12.367249481 +0000
++++ safeside-ptrenc/demos/local_content.h	2024-05-28 13:03:02.116276936 +0000
+@@ -15,7 +15,7 @@
+ // intended to be leaked outside of the C++ execution model using sidechannels.
+ // Concrete sidechannel is dependent on the concrete vulnerability that we are
+ // demonstrating.
+-const char *public_data = "Hello, world!";
++const char *public_data = "    Hello, world!";
+ const char *private_data = "It's a s3kr3t!!!";
+ 
+ #endif  // DEMOS_LOCAL_CONTENT_H_
+diff -urN -x '.*' -x build safeside-unmod/demos/spectre_v1_pht_sa.cc safeside-ptrenc/demos/spectre_v1_pht_sa.cc
+--- safeside-unmod/demos/spectre_v1_pht_sa.cc	2024-05-28 12:23:12.367249481 +0000
++++ safeside-ptrenc/demos/spectre_v1_pht_sa.cc	2024-05-28 13:31:27.035585593 +0000
+@@ -25,6 +25,19 @@
+ #include "timing_array.h"
+ #include "utils.h"
+ 
++#include "crypto/bipbip.h"
++#include "crypto/cc_encoding.h"
++#include "malloc/cc_globals.h"
++
++
++#define DEF_ADDR_KEY_BYTES                                                     \
++    {                                                                          \
++        0xd1, 0xbe, 0x2c, 0xdb, 0xb5, 0x82, 0x4d, 0x03, 0x17, 0x5c, 0x25,      \
++                0x2a, 0x20, 0xb6, 0xf2, 0x93, 0xfd, 0x01, 0x96, 0xe7, 0xb5,    \
++                0xe6, 0x88, 0x1c, 0xb3, 0x69, 0x22, 0x60, 0x38, 0x09, 0xf6,    \
++                0x68                                                           \
++    }
++
+ // Leaks the byte that is physically located at &text[0] + offset, without ever
+ // loading it. In the abstract machine, and in the code executed by the CPU,
+ // this function does not load any memory except for what is in the bounds
+@@ -91,14 +104,51 @@
+ }
+ 
+ int main() {
++
++  std::cout << "Public data: " << public_data << "\n";
++
++  ptr_metadata_t public_metadata = { 0 };
++  public_metadata.size_ = 0b000101;  // 16 B allocation
++
++  ptr_metadata_t supervisor_metadata = { 0 };
++  supervisor_metadata.size_ = 0b000111;  // 64 B allocation
++
++  CCPointerEncoding enc = CCPointerEncoding();
++
++  pointer_key_t addr_key_{.size_ = 32,
++                            .bytes_ = DEF_ADDR_KEY_BYTES};
++
++  enc.init_pointer_key(addr_key_.bytes_, addr_key_.size_);
++
++  // 2-pow-align the public data pointer.
++  // (inside gem5, this works; in a full implementation, 
++  // we'd ensure this alignment in the compiler.)
++  const char* pub_data = public_data + 4;
++
++    const size_t private_offset = private_data - pub_data;
++
++  char* public_data_enc = (char*) enc.encode_pointer((uint64_t) pub_data, &public_metadata);
++
++  std::cout << "Public data is at " << (void*) pub_data << ".\n";
++  std::cout << "Encrypted, that address is " << (void*) public_data_enc << ".\n";
++  std::cout << "Decrypted, that CA gives " << (void*) enc.decode_pointer((uint64_t) public_data_enc) << ".\n";
++  std::cout.flush();
++
++  std::cout << "Private data is at " << (void*) private_data << ".\n";
++
++  std::cout << "But public_data's CA + private_offset, decoded, gives " << (void*) enc.decode_pointer((uint64_t) public_data_enc + private_offset) << "!\n";
++
++  std::cout << "Public data, via its CA: " << public_data_enc << "\n";
++
+   std::cout << "Leaking the string: ";
+   std::cout.flush();
+-  const size_t private_offset = private_data - public_data;
++
+   for (size_t i = 0; i < strlen(private_data); ++i) {
+     // On at least some machines, this will print the i'th byte from
+     // private_data, despite the only actually-executed memory accesses being
+     // to valid bytes in public_data.
+-    std::cout << LeakByte(public_data, private_offset + i);
++    //std::cout << LeakByte(pub_data, private_offset + i);
++    std::cout << LeakByte(public_data_enc, private_offset + i);
+     std::cout.flush();
+   }
+   std::cout << "\nDone!\n";
