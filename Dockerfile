@@ -41,7 +41,7 @@ RUN apt-get update && apt-get upgrade -y \
     llvm \
     ninja-build \
     python3=3.8.2-0ubuntu2 \
-    python3-pip=20.0.2-5ubuntu1.10 \
+    python3-pip \
     zstd \
     bc \
     cpio \
